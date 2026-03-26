@@ -16,7 +16,7 @@ export interface HunterContacto {
 
 // ─── Discover: busca empresas por sector/país/tamaño ─────────────────────────
 
-interface DiscoverEmpresa {
+export interface DiscoverEmpresa {
   name: string
   domain: string
   headcount?: string
@@ -28,32 +28,37 @@ export async function descubrirEmpresas(
   filtros: FiltrosHunter,
   limite = 20
 ): Promise<DiscoverEmpresa[]> {
-  const params = new URLSearchParams({ api_key: API_KEY(), limit: String(limite) })
+  const key = API_KEY()
+  if (!key) throw new Error('HUNTER_API_KEY no configurada en .env.local')
+
+  const params = new URLSearchParams({ api_key: key, limit: String(limite) })
 
   if (filtros.sector) {
-    params.set('industry', JSON.stringify({ include: [filtros.sector] }))
+    params.set('industry', filtros.sector)
   }
   if (filtros.pais) {
-    params.set('headquarters_location', JSON.stringify({ include: [{ country: filtros.pais }] }))
+    params.set('country', filtros.pais)
   }
   if (filtros.tamanos?.length) {
-    params.set('headcount', JSON.stringify(filtros.tamanos))
+    // Hunter acepta headcount como valores separados: headcount[]=11-50&headcount[]=51-200
+    filtros.tamanos.forEach((t) => params.append('headcount[]', t))
   }
 
-  const url = `${HUNTER_BASE}/discover?${params.toString()}`
+  const url = `${HUNTER_BASE}/companies?${params.toString()}`
+  console.log('[Hunter] GET', url.replace(key, '***'))
 
-  try {
-    const res = await fetch(url)
-    if (!res.ok) {
-      console.error(`Hunter Discover error ${res.status}:`, await res.text())
-      return []
-    }
-    const data = await res.json()
-    return (data.data?.companies || []) as DiscoverEmpresa[]
-  } catch (e) {
-    console.error('Hunter Discover exception:', e)
-    return []
+  const res = await fetch(url)
+  const text = await res.text()
+  console.log('[Hunter] status:', res.status, '| body:', text.slice(0, 500))
+
+  if (!res.ok) {
+    throw new Error(`Hunter error ${res.status}: ${text}`)
   }
+
+  let data: { data?: { companies?: DiscoverEmpresa[] } }
+  try { data = JSON.parse(text) } catch { return [] }
+
+  return (data.data?.companies || []) as DiscoverEmpresa[]
 }
 
 // ─── Domain Search: busca emails en un dominio con filtros ────────────────────

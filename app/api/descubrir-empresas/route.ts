@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { descubrirEmpresas } from '@/lib/hunter'
+import { descubrirEmpresas, type DiscoverEmpresa } from '@/lib/hunter'
 import type { FiltrosHunter } from '@/types'
 
 export async function POST(request: Request) {
@@ -18,7 +18,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Especifica al menos sector o país' }, { status: 400 })
   }
 
-  const empresas = await descubrirEmpresas(filtros, limite)
+  let empresas: DiscoverEmpresa[]
+  try {
+    empresas = await descubrirEmpresas(filtros, limite)
+  } catch (e: unknown) {
+    const msg = (e as Error).message
+    console.error('[descubrir-empresas] Error:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 
   if (empresas.length === 0) {
     return NextResponse.json(
