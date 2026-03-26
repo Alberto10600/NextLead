@@ -12,11 +12,7 @@ export default async function ContactosPage() {
 
   const [{ data: perfil }, { data: contactos }] = await Promise.all([
     supabase.from('perfiles').select('*').eq('id', user.id).single(),
-    supabase
-      .from('contactos')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false }),
+    supabase.from('contactos').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
   ])
 
   return (
@@ -25,9 +21,7 @@ export default async function ContactosPage() {
 
       <div className="p-6">
         <div className="mb-4">
-          <p className="text-sm text-slate-400">
-            {(contactos || []).length} contactos en total
-          </p>
+          <p className="text-sm text-slate-400">{(contactos || []).length} contactos en total</p>
         </div>
 
         {contactos && contactos.length > 0 ? (

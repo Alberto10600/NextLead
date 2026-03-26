@@ -8,11 +8,11 @@ import type { Perfil, Campana } from '@/types'
 import { formatearFecha, calcularTasaApertura } from '@/lib/utils'
 
 const estadoBadge: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
-  borrador:    'default',
-  procesando:  'info',
-  activa:      'success',
-  pausada:     'warning',
-  completada:  'default',
+  borrador:   'default',
+  procesando: 'info',
+  activa:     'success',
+  pausada:    'warning',
+  completada: 'default',
 }
 
 export default async function DashboardPage() {
@@ -31,9 +31,7 @@ export default async function DashboardPage() {
       .limit(5),
   ])
 
-  const p = perfil as Perfil
   const listaCampanas = (campanas || []) as Campana[]
-
   const totalEnviados = listaCampanas.reduce((s, c) => s + c.total_enviados, 0)
   const totalAbiertos = listaCampanas.reduce((s, c) => s + c.total_abiertos, 0)
   const totalRespondidos = listaCampanas.reduce((s, c) => s + c.total_respondidos, 0)
@@ -41,21 +39,12 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <Header perfil={p} titulo="Dashboard" />
+      <Header perfil={perfil as Perfil} titulo="Dashboard" />
 
       <div className="p-6 space-y-6">
-        {/* Estadísticas */}
         <div className="grid grid-cols-4 gap-4">
-          <TarjetaEstadistica
-            titulo="Campañas activas"
-            valor={campañasActivas}
-            icono="◎"
-          />
-          <TarjetaEstadistica
-            titulo="Emails enviados"
-            valor={totalEnviados}
-            icono="✉"
-          />
+          <TarjetaEstadistica titulo="Campañas activas"  valor={campañasActivas} icono="◎" />
+          <TarjetaEstadistica titulo="Emails enviados"   valor={totalEnviados}   icono="✉" />
           <TarjetaEstadistica
             titulo="Tasa de apertura"
             valor={calcularTasaApertura(totalEnviados, totalAbiertos)}
@@ -70,7 +59,6 @@ export default async function DashboardPage() {
           />
         </div>
 
-        {/* Últimas campañas */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-slate-200">Últimas campañas</h2>

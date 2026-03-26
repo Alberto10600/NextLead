@@ -10,16 +10,11 @@ export default async function NuevaCampanaPage() {
 
   if (!user) redirect('/login')
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  const { data: perfil } = await supabase.from('perfiles').select('*').eq('id', user.id).single()
 
   return (
     <div>
       <Header perfil={perfil as Perfil} titulo="Nueva campaña" />
-
       <div className="p-6">
         <FormularioCampana />
       </div>

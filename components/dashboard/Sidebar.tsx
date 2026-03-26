@@ -3,21 +3,15 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type { Plan } from '@/types'
-import Badge from '@/components/ui/Badge'
-
-interface SidebarProps {
-  plan?: Plan
-}
 
 const navItems = [
-  { href: '/dashboard',                label: 'Dashboard',       icon: '◻' },
-  { href: '/dashboard/campanas',       label: 'Campañas',        icon: '◎' },
-  { href: '/dashboard/seguimientos',   label: 'Seguimientos',    icon: '↺' },
-  { href: '/dashboard/contactos',      label: 'Contactos',       icon: '◈' },
+  { href: '/dashboard',              label: 'Dashboard',    icon: '▦' },
+  { href: '/dashboard/campanas',     label: 'Campañas',     icon: '◎' },
+  { href: '/dashboard/seguimientos', label: 'Seguimientos', icon: '↺' },
+  { href: '/dashboard/contactos',    label: 'Contactos',    icon: '◈' },
 ]
 
-export default function Sidebar({ plan = 'free' }: SidebarProps) {
+export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -40,7 +34,8 @@ export default function Sidebar({ plan = 'free' }: SidebarProps) {
       {/* Navegación */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href ||
+          const isActive =
+            pathname === item.href ||
             (item.href !== '/dashboard' && pathname.startsWith(item.href))
 
           return (
@@ -62,16 +57,8 @@ export default function Sidebar({ plan = 'free' }: SidebarProps) {
         })}
       </nav>
 
-      {/* Plan y ajustes */}
-      <div className="px-3 py-4 border-t border-[#334155] space-y-2">
-        <Link
-          href="/precios"
-          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-slate-400 hover:text-slate-200 hover:bg-[#334155] transition-all duration-200"
-        >
-          <span>◈</span>
-          Mi plan
-          <Badge variant="plan" className="ml-auto">{plan}</Badge>
-        </Link>
+      {/* Footer */}
+      <div className="px-3 py-4 border-t border-[#334155]">
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm text-slate-400 hover:text-slate-200 hover:bg-[#334155] transition-all duration-200"

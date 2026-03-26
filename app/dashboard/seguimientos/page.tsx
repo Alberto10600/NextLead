@@ -40,11 +40,7 @@ export default function SeguimientosPage() {
     try {
       const res = await fetch('/api/seguimientos', { method: 'POST' })
       const data = await res.json()
-      setToast({
-        msg: `${data.procesados} enviados · ${data.cancelados} cancelados`,
-        tipo: 'success',
-      })
-      // Recargar
+      setToast({ msg: `${data.procesados} enviados · ${data.cancelados} cancelados`, tipo: 'success' })
       const res2 = await fetch('/api/seguimientos')
       const data2 = await res2.json()
       setSeguimientos(data2.seguimientos || [])
@@ -59,23 +55,23 @@ export default function SeguimientosPage() {
 
   return (
     <div>
-      <div className="border-b border-[#334155] bg-[#1e293b] px-6 py-4 flex items-center justify-between">
+      <div className="h-14 border-b border-[#334155] bg-[#1e293b] px-6 flex items-center justify-between">
         <div>
           <h1 className="text-base font-semibold text-slate-200">Seguimientos</h1>
-          <p className="text-xs text-slate-400">{pendientes.length} pendientes de envío</p>
         </div>
-        <Button
-          onClick={procesarAhora}
-          loading={procesando}
-          disabled={pendientes.length === 0}
-        >
-          Procesar ahora
-        </Button>
+        <div className="flex items-center gap-3">
+          {pendientes.length > 0 && (
+            <span className="text-xs text-amber-400">{pendientes.length} pendientes</span>
+          )}
+          <Button onClick={procesarAhora} loading={procesando} disabled={pendientes.length === 0} size="sm">
+            Procesar ahora
+          </Button>
+        </div>
       </div>
 
       <div className="p-6">
         {loading ? (
-          <div className="text-center py-12 text-slate-400">Cargando...</div>
+          <div className="text-center py-12 text-slate-500">Cargando...</div>
         ) : seguimientos.length === 0 ? (
           <div className="bg-[#1e293b] border border-[#334155] rounded-lg p-12 text-center text-slate-400">
             No hay seguimientos programados. Se crean automáticamente al enviar una campaña.
@@ -87,9 +83,9 @@ export default function SeguimientosPage() {
                 <tr className="border-b border-[#334155]">
                   <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Contacto</th>
                   <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Empresa</th>
-                  <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Seguimiento</th>
+                  <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">#</th>
                   <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Estado</th>
-                  <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Fecha programada</th>
+                  <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Programado</th>
                   <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Enviado</th>
                 </tr>
               </thead>
@@ -97,7 +93,9 @@ export default function SeguimientosPage() {
                 {seguimientos.map((s) => (
                   <tr key={s.id} className="border-b border-[#334155] hover:bg-[#334155]/30 transition-colors">
                     <td className="px-4 py-3 text-slate-300">
-                      {s.contactos ? `${s.contactos.nombre || ''} ${s.contactos.apellido || ''}`.trim() || s.contactos.email : '—'}
+                      {s.contactos
+                        ? `${s.contactos.nombre || ''} ${s.contactos.apellido || ''}`.trim() || s.contactos.email
+                        : '—'}
                     </td>
                     <td className="px-4 py-3 text-slate-400">{s.contactos?.empresa || '—'}</td>
                     <td className="px-4 py-3 text-slate-400">#{s.numero_seguimiento}</td>
@@ -116,9 +114,7 @@ export default function SeguimientosPage() {
         )}
       </div>
 
-      {toast && (
-        <Toast message={toast.msg} type={toast.tipo} onClose={() => setToast(null)} />
-      )}
+      {toast && <Toast message={toast.msg} type={toast.tipo} onClose={() => setToast(null)} />}
     </div>
   )
 }

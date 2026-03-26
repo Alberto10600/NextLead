@@ -22,11 +22,7 @@ export default async function CampanasPage() {
 
   const [{ data: perfil }, { data: campanas }] = await Promise.all([
     supabase.from('perfiles').select('*').eq('id', user.id).single(),
-    supabase
-      .from('campanas')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false }),
+    supabase.from('campanas').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
   ])
 
   const lista = (campanas || []) as Campana[]
@@ -37,10 +33,7 @@ export default async function CampanasPage() {
 
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-200">Todas las campañas</h2>
-            <p className="text-sm text-slate-400">{lista.length} campaña{lista.length !== 1 ? 's' : ''}</p>
-          </div>
+          <p className="text-sm text-slate-400">{lista.length} campaña{lista.length !== 1 ? 's' : ''}</p>
           <Link
             href="/dashboard/campanas/nueva"
             className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md transition-colors"
