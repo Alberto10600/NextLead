@@ -8,8 +8,10 @@ interface HeaderProps {
 }
 
 export default function Header({ perfil, titulo }: HeaderProps) {
-  const limite = LIMITES_PLAN[perfil.plan]
-  const porcentaje = Math.round((perfil.creditos_restantes / limite.contactos_mes) * 100)
+  if (!perfil) return <header className="h-14 border-b border-[#334155] bg-[#1e293b] px-6 flex items-center"><h1 className="text-base font-semibold text-slate-200">{titulo}</h1></header>
+
+  const limite = LIMITES_PLAN[perfil.plan ?? 'free']
+  const porcentaje = Math.round(((perfil.creditos_restantes ?? 0) / limite.contactos_mes) * 100)
 
   return (
     <header className="h-14 border-b border-[#334155] bg-[#1e293b] px-6 flex items-center justify-between">
