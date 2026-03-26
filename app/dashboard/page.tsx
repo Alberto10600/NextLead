@@ -38,10 +38,12 @@ export default async function DashboardPage() {
   const campañasActivas = listaCampanas.filter((c) => c.estado === 'activa').length
 
   return (
-    <div>
+    <div className="min-h-screen">
       <Header perfil={perfil as Perfil} titulo="Dashboard" />
 
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-8 max-w-6xl">
+
+        {/* Stats grid */}
         <div className="grid grid-cols-4 gap-4">
           <TarjetaEstadistica titulo="Campañas activas"  valor={campañasActivas} icono="◎" />
           <TarjetaEstadistica titulo="Emails enviados"   valor={totalEnviados}   icono="✉" />
@@ -59,50 +61,78 @@ export default async function DashboardPage() {
           />
         </div>
 
+        {/* Recent campaigns */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-slate-200">Últimas campañas</h2>
-            <Link href="/dashboard/campanas/nueva" className="text-sm text-blue-400 hover:text-blue-300">
-              + Nueva campaña
+            <div>
+              <h2 className="text-sm font-semibold tracking-tight text-white">Últimas campañas</h2>
+              <p className="text-xs text-slate-600 mt-0.5">Tus 5 campañas más recientes</p>
+            </div>
+            <Link
+              href="/dashboard/campanas/nueva"
+              className="flex items-center gap-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/15 border border-blue-500/20 hover:border-blue-500/30 px-3 py-1.5 rounded-lg transition-all duration-150"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Nueva campaña
             </Link>
           </div>
 
           {listaCampanas.length === 0 ? (
-            <div className="bg-[#1e293b] border border-[#334155] rounded-lg p-12 text-center">
-              <p className="text-slate-400 mb-4">Aún no tienes campañas</p>
+            <div className="bg-[#111827] border border-white/5 rounded-xl p-14 text-center">
+              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center mx-auto mb-4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
+                  <path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/>
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-slate-400 mb-1">Aún no tienes campañas</p>
+              <p className="text-xs text-slate-600 mb-5">Crea tu primera campaña para empezar a enviar emails</p>
               <Link
                 href="/dashboard/campanas/nueva"
-                className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md transition-colors"
+                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors duration-150"
               >
                 Crear primera campaña
               </Link>
             </div>
           ) : (
-            <div className="bg-[#1e293b] border border-[#334155] rounded-lg overflow-hidden">
+            <div className="bg-[#111827] border border-white/5 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#334155]">
-                    <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Nombre</th>
-                    <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Sector</th>
-                    <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Estado</th>
-                    <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Enviados</th>
-                    <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Fecha</th>
+                  <tr className="border-b border-white/5">
+                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Nombre</th>
+                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Sector</th>
+                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Estado</th>
+                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Enviados</th>
+                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Fecha</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {listaCampanas.map((c) => (
-                    <tr key={c.id} className="border-b border-[#334155] hover:bg-[#334155]/30 transition-colors">
-                      <td className="px-4 py-3">
-                        <Link href={`/dashboard/campanas/${c.id}`} className="text-slate-200 hover:text-blue-400 transition-colors">
+                  {listaCampanas.map((c, i) => (
+                    <tr
+                      key={c.id}
+                      className={`group transition-colors duration-100 hover:bg-white/[0.03] ${i < listaCampanas.length - 1 ? 'border-b border-white/5' : ''}`}
+                    >
+                      <td className="px-5 py-3.5">
+                        <Link
+                          href={`/dashboard/campanas/${c.id}`}
+                          className="text-slate-200 hover:text-blue-400 transition-colors duration-150 font-medium tracking-tight text-sm"
+                        >
                           {c.nombre}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-slate-400">{c.sector}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3.5">
+                        <span className="text-slate-500 text-xs tracking-tight">{c.sector}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
                         <Badge variant={estadoBadge[c.estado] || 'default'}>{c.estado}</Badge>
                       </td>
-                      <td className="px-4 py-3 text-slate-400">{c.total_enviados}</td>
-                      <td className="px-4 py-3 text-slate-500">{formatearFecha(c.created_at)}</td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-slate-400 text-sm tabular-nums">{c.total_enviados}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-slate-600 text-xs tracking-tight">{formatearFecha(c.created_at)}</span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -110,6 +140,7 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
+
       </div>
     </div>
   )
