@@ -2,6 +2,26 @@ export type Plan = 'free' | 'starter' | 'pro' | 'business'
 export type EstadoCampana = 'borrador' | 'procesando' | 'activa' | 'pausada' | 'completada'
 export type EstadoContacto = 'pendiente' | 'enviado' | 'abierto' | 'respondido' | 'rebotado' | 'error'
 
+// Valores exactos de la API de Hunter.io
+export type HunterDepartamento =
+  | 'executive' | 'it' | 'finance' | 'management' | 'sales'
+  | 'legal' | 'support' | 'hr' | 'marketing' | 'communication'
+  | 'education' | 'design' | 'health' | 'operations'
+
+export type HunterSeniority = 'junior' | 'senior' | 'executive'
+
+export type HunterTamanoEmpresa =
+  | '1-10' | '11-50' | '51-200' | '201-500'
+  | '501-1000' | '1001-5000' | '5001-10000' | '10001+'
+
+export interface FiltrosHunter {
+  sector: string              // industria en formato LinkedIn
+  pais: string                // código ISO (ES, MX, AR...)
+  tamanos: HunterTamanoEmpresa[]
+  departamentos: HunterDepartamento[]
+  seniority: HunterSeniority[]
+}
+
 export interface Perfil {
   id: string
   email: string
@@ -22,6 +42,8 @@ export interface Campana {
   pais: string
   descripcion_agencia: string
   cargos_objetivo: string[]
+  dominios?: string[]
+  filtros_hunter?: FiltrosHunter
   estado: EstadoCampana
   total_contactos: number
   total_enviados: number
@@ -76,37 +98,81 @@ export interface HistorialContacto {
   total_contactos: number
 }
 
-export interface FormularioCampana {
-  nombre: string
-  sector: string
-  pais: string
-  descripcion_agencia: string
-  cargos_objetivo: string[]
+// Etiquetas en español para los valores de Hunter
+export const DEPARTAMENTOS_HUNTER: Record<HunterDepartamento, string> = {
+  executive:     'Dirección / C-Suite',
+  management:    'Management',
+  sales:         'Ventas',
+  marketing:     'Marketing',
+  it:            'IT / Tecnología',
+  finance:       'Finanzas',
+  hr:            'Recursos Humanos',
+  operations:    'Operaciones',
+  support:       'Soporte / Atención cliente',
+  legal:         'Legal',
+  communication: 'Comunicación',
+  design:        'Diseño',
+  education:     'Educación',
+  health:        'Salud',
 }
 
-export interface ResultadoBusqueda {
-  contactos: Contacto[]
-  total_encontrados: number
-  total_procesados: number
-  duplicados_eliminados: number
-  errores: string[]
+export const SENIORITY_HUNTER: Record<HunterSeniority, string> = {
+  executive: 'Dirección (C-level, VP, Director)',
+  senior:    'Senior (Manager, Lead)',
+  junior:    'Junior',
 }
 
-export interface LimitePlan {
-  contactos_mes: number
-  campanas_activas: number
-  seguimientos: number
-  precio_mensual: number
+export const TAMANOS_EMPRESA: Record<HunterTamanoEmpresa, string> = {
+  '1-10':       '1–10 empleados',
+  '11-50':      '11–50 empleados',
+  '51-200':     '51–200 empleados',
+  '201-500':    '201–500 empleados',
+  '501-1000':   '501–1000 empleados',
+  '1001-5000':  '1.001–5.000 empleados',
+  '5001-10000': '5.001–10.000 empleados',
+  '10001+':     'Más de 10.000 empleados',
 }
 
-export const LIMITES_PLAN: Record<Plan, LimitePlan> = {
-  free:     { contactos_mes: 25,   campanas_activas: 1,   seguimientos: 0, precio_mensual: 0 },
-  starter:  { contactos_mes: 600,  campanas_activas: 3,   seguimientos: 1, precio_mensual: 89 },
-  pro:      { contactos_mes: 1500, campanas_activas: 10,  seguimientos: 3, precio_mensual: 149 },
-  business: { contactos_mes: 3000, campanas_activas: 999, seguimientos: 5, precio_mensual: 279 },
-}
+// Sectores más comunes en España/LATAM con el valor exacto para Hunter
+export const SECTORES_HUNTER: { label: string; value: string }[] = [
+  { label: 'Ecommerce / Retail Online',         value: 'Retail' },
+  { label: 'Software / SaaS',                   value: 'Software Development' },
+  { label: 'Agencia de Marketing / Publicidad', value: 'Advertising Services' },
+  { label: 'Consultoría',                       value: 'Business Consulting and Services' },
+  { label: 'Servicios Financieros',             value: 'Financial Services' },
+  { label: 'Inmobiliario',                      value: 'Real Estate' },
+  { label: 'Educación / Formación',             value: 'Education' },
+  { label: 'Salud / Clínicas',                  value: 'Hospitals and Health Care' },
+  { label: 'Hostelería / Turismo',              value: 'Hospitality' },
+  { label: 'Construcción',                      value: 'Construction' },
+  { label: 'Logística / Transporte',            value: 'Transportation, Logistics, Supply Chain and Storage' },
+  { label: 'Manufactura / Industria',           value: 'Manufacturing' },
+  { label: 'Medios / Comunicación',             value: 'Media Production' },
+  { label: 'Recursos Humanos / Selección',      value: 'Staffing and Recruiting' },
+  { label: 'Legal / Asesoría Jurídica',         value: 'Law Practice' },
+  { label: 'Tecnología / IT',                   value: 'IT Services and IT Consulting' },
+  { label: 'Restauración / Alimentación',       value: 'Food and Beverage Services' },
+  { label: 'Moda / Textil',                     value: 'Apparel and Fashion' },
+  { label: 'Automoción',                        value: 'Motor Vehicle Manufacturing' },
+  { label: 'Energía',                           value: 'Renewable Energy Semiconductor Manufacturing' },
+]
 
-export interface PrecioStripe {
-  plan: Plan
-  priceId: string
-}
+export const PAISES_HUNTER: { label: string; value: string }[] = [
+  { label: 'España',          value: 'ES' },
+  { label: 'México',          value: 'MX' },
+  { label: 'Argentina',       value: 'AR' },
+  { label: 'Colombia',        value: 'CO' },
+  { label: 'Chile',           value: 'CL' },
+  { label: 'Perú',            value: 'PE' },
+  { label: 'Estados Unidos',  value: 'US' },
+  { label: 'Reino Unido',     value: 'GB' },
+  { label: 'Francia',         value: 'FR' },
+  { label: 'Alemania',        value: 'DE' },
+  { label: 'Italia',          value: 'IT' },
+  { label: 'Portugal',        value: 'PT' },
+  { label: 'Países Bajos',    value: 'NL' },
+  { label: 'Bélgica',         value: 'BE' },
+  { label: 'Suiza',           value: 'CH' },
+  { label: 'Polonia',         value: 'PL' },
+  { label: 'Brasil',          value: 'BR' },
+]
