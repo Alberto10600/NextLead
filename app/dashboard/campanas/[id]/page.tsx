@@ -10,7 +10,7 @@ import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import Toast from '@/components/ui/Toast'
 
-type Fase = 'idle' | 'enriqueciendo' | 'listo' | 'enviando' | 'completado'
+type Fase = 'idle' | 'buscando' | 'listo' | 'enviando' | 'completado'
 
 const estadoBadge: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
   borrador:   'default',
@@ -25,7 +25,7 @@ export default function DetalleCampanaPage() {
   const [campana, setCampana] = useState<Campana & { dominios?: string[] } | null>(null)
   const [contactos, setContactos] = useState<Contacto[]>([])
   const [fase, setFase] = useState<Fase>('idle')
-  const [stats, setStats] = useState({ duplicados: 0, errores: 0 })
+  const [stats, setStats] = useState({ encontrados: 0, sinResultados: 0 })
   const [toast, setToast] = useState<{ msg: string; tipo: 'success' | 'error' | 'info' } | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -34,8 +34,9 @@ export default function DetalleCampanaPage() {
     if (res.ok) {
       const data = await res.json()
       setCampana(data.campana)
-      setContactos(data.contactos || [])
-      if (data.contactos?.length > 0) setFase('listo')
+      const lista = data.contactos || []
+      setContactos(lista)
+      if (lista.length > 0) setFase('listo')
     }
     setLoading(false)
   }, [id])
@@ -46,50 +47,50 @@ export default function DetalleCampanaPage() {
 
   const buscarContactos = async () => {
     if (!campana) return
-    setFase('enriqueciendo')
-    setStats({ duplicados: 0, errores: 0 })
+    setFase('buscando')
 
     try {
+      // Paso 1: Hunter busca contactos
       const res = await fetch('/api/enriquecer-contactos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dominios: campana.dominios || [],
           cargos_objetivo: campana.cargos_objetivo,
-          campana_id: id,
         }),
       })
 
       const data = await res.json()
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Error buscando contactos')
+      if (!res.ok) throw new Error(data.error || 'Error en Hunter')
+
+      if (data.total === 0) {
+        setToast({ msg: 'Hunter no encontró contactos en estos dominios. Comprueba que los dominios son correctos.', tipo: 'info' })
+        setFase('idle')
+        return
       }
 
-      // Guardar contactos en Supabase
+      // Paso 2: Guardar en Supabase
       const res2 = await fetch('/api/guardar-contactos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contactos: data.contactos,
-          campana_id: id,
-        }),
+        body: JSON.stringify({ contactos: data.contactos, campana_id: id }),
       })
 
       const data2 = await res2.json()
 
-      setStats({ duplicados: data.duplicados_eliminados || 0, errores: 0 })
-      setContactos(data2.contactos || data.contactos)
-      setFase('listo')
+      if (!res2.ok) throw new Error(data2.error || 'Error guardando contactos')
 
-      if (data.contactos.length === 0) {
-        setToast({ msg: 'Hunter no encontró contactos para estos dominios. Prueba con otros dominios.', tipo: 'info' })
-        setFase('idle')
-      } else {
-        setToast({ msg: `${data.contactos.length} contactos encontrados`, tipo: 'success' })
-      }
+      setContactos(data2.contactos)
+      setStats({
+        encontrados: data2.contactos.length,
+        sinResultados: data.dominios_sin_resultados?.length || 0,
+      })
+      setFase('listo')
+      setToast({ msg: `${data2.contactos.length} contactos encontrados`, tipo: 'success' })
     } catch (e: unknown) {
-      setToast({ msg: (e as Error).message, tipo: 'error' })
+      const msg = (e as Error).message
+      setToast({ msg, tipo: 'error' })
       setFase('idle')
     }
   }
@@ -102,11 +103,8 @@ export default function DetalleCampanaPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ campana_id: id }),
       })
-
       const data = await res.json()
-
       if (!res.ok) throw new Error(data.error)
-
       setToast({ msg: `${data.enviados} contactos marcados como enviados`, tipo: 'success' })
       setFase('completado')
       await cargarCampana()
@@ -121,11 +119,7 @@ export default function DetalleCampanaPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>
   }
 
   if (!campana) {
@@ -155,18 +149,18 @@ export default function DetalleCampanaPage() {
         <div className="flex items-center gap-2">
           {fase === 'idle' && (
             <Button onClick={buscarContactos}>
-              Buscar contactos con Hunter
+              Buscar contactos
             </Button>
           )}
           {fase === 'listo' && contactosPendientes.length > 0 && (
             <Button onClick={marcarEnviados}>
-              Marcar como enviados ({contactosPendientes.length})
+              Marcar enviados ({contactosPendientes.length})
             </Button>
           )}
-          {['enriqueciendo', 'enviando'].includes(fase) && (
+          {['buscando', 'enviando'].includes(fase) && (
             <div className="flex items-center gap-2 text-sm text-slate-400">
               <Spinner size="sm" />
-              {fase === 'enriqueciendo' ? 'Buscando contactos...' : 'Procesando...'}
+              {fase === 'buscando' ? 'Buscando en Hunter...' : 'Procesando...'}
             </div>
           )}
         </div>
@@ -177,7 +171,7 @@ export default function DetalleCampanaPage() {
         <div className="grid grid-cols-4 gap-3 text-sm">
           <div className="bg-[#1e293b] border border-[#334155] rounded-md px-3 py-2">
             <p className="text-xs text-slate-500">Sector</p>
-            <p className="text-slate-300">{campana.sector}</p>
+            <p className="text-slate-300 truncate">{campana.sector}</p>
           </div>
           <div className="bg-[#1e293b] border border-[#334155] rounded-md px-3 py-2">
             <p className="text-xs text-slate-500">País</p>
@@ -185,18 +179,18 @@ export default function DetalleCampanaPage() {
           </div>
           <div className="bg-[#1e293b] border border-[#334155] rounded-md px-3 py-2">
             <p className="text-xs text-slate-500">Dominios</p>
-            <p className="text-slate-300">{campana.dominios?.length || 0} dominios</p>
+            <p className="text-slate-300">{campana.dominios?.length || 0}</p>
           </div>
           <div className="bg-[#1e293b] border border-[#334155] rounded-md px-3 py-2">
-            <p className="text-xs text-slate-500">Cargos</p>
-            <p className="text-slate-300 truncate">{campana.cargos_objetivo?.join(', ')}</p>
+            <p className="text-xs text-slate-500">Contactos</p>
+            <p className="text-slate-300">{contactos.length}</p>
           </div>
         </div>
 
-        {/* Lista de dominios */}
-        {campana.dominios && campana.dominios.length > 0 && fase === 'idle' && contactos.length === 0 && (
+        {/* Lista dominios cuando está vacío */}
+        {fase === 'idle' && contactos.length === 0 && campana.dominios && campana.dominios.length > 0 && (
           <div className="bg-[#1e293b] border border-[#334155] rounded-lg p-4">
-            <p className="text-xs text-slate-400 font-medium mb-3">DOMINIOS A PROSPECTAR</p>
+            <p className="text-xs text-slate-400 font-medium mb-3">DOMINIOS</p>
             <div className="flex flex-wrap gap-2">
               {campana.dominios.map((d) => (
                 <span key={d} className="bg-[#0f172a] border border-[#334155] rounded px-2 py-1 text-xs text-slate-300 font-mono">
@@ -207,34 +201,32 @@ export default function DetalleCampanaPage() {
           </div>
         )}
 
-        {/* Resumen de resultados */}
+        {/* Resumen */}
         {contactos.length > 0 && (
           <p className="text-sm text-slate-400">
-            <span className="text-slate-200 font-medium">{contactos.length} contactos encontrados</span>
-            {stats.duplicados > 0 && ` · ${stats.duplicados} duplicados eliminados`}
+            <span className="text-slate-200 font-medium">{contactos.length} contactos</span>
+            {stats.sinResultados > 0 && ` · ${stats.sinResultados} dominios sin resultados`}
           </p>
         )}
 
-        {/* Tabla de contactos */}
+        {/* Tabla */}
         {contactos.length > 0 && (
           <TablaContactos
             contactos={contactos}
-            onExcluir={fase === 'listo' ? excluirContacto : undefined}
+            onExcluir={['listo', 'completado'].includes(fase) ? excluirContacto : undefined}
           />
         )}
 
         {/* Estado vacío */}
         {fase === 'idle' && contactos.length === 0 && (
           <div className="bg-[#1e293b] border border-[#334155] rounded-lg p-16 text-center">
-            <p className="text-slate-400 mb-2">Haz clic en "Buscar contactos con Hunter" para empezar</p>
-            <p className="text-xs text-slate-600">Hunter.io buscará emails en los {campana.dominios?.length || 0} dominios de esta campaña</p>
+            <p className="text-slate-400 mb-2">Pulsa "Buscar contactos" para que Hunter busque emails en tus dominios</p>
+            <p className="text-xs text-slate-600">{campana.dominios?.length || 0} dominios configurados</p>
           </div>
         )}
       </div>
 
-      {toast && (
-        <Toast message={toast.msg} type={toast.tipo} onClose={() => setToast(null)} />
-      )}
+      {toast && <Toast message={toast.msg} type={toast.tipo} onClose={() => setToast(null)} />}
     </div>
   )
 }
