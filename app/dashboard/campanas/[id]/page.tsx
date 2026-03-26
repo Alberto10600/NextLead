@@ -14,11 +14,11 @@ import Toast from '@/components/ui/Toast'
 type Fase = 'idle' | 'descubriendo' | 'enriqueciendo' | 'listo' | 'enviando' | 'completado'
 
 const estadoStyles: Record<string, { bg: string; text: string; label: string }> = {
-  borrador:   { bg: 'bg-slate-800', text: 'text-slate-400', label: 'Borrador' },
-  procesando: { bg: 'bg-blue-950', text: 'text-blue-400', label: 'Procesando' },
-  activa:     { bg: 'bg-emerald-950', text: 'text-emerald-400', label: 'Activa' },
-  pausada:    { bg: 'bg-amber-950', text: 'text-amber-400', label: 'Pausada' },
-  completada: { bg: 'bg-slate-800', text: 'text-slate-400', label: 'Completada' },
+  borrador:   { bg: 'bg-slate-800/60',   text: 'text-slate-400',   label: 'Borrador' },
+  procesando: { bg: 'bg-blue-500/10',    text: 'text-blue-400',    label: 'Procesando' },
+  activa:     { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Activa' },
+  pausada:    { bg: 'bg-amber-500/10',   text: 'text-amber-400',   label: 'Pausada' },
+  completada: { bg: 'bg-slate-700/40',   text: 'text-slate-400',   label: 'Completada' },
 }
 
 const faseTexto: Partial<Record<Fase, string>> = {
@@ -161,9 +161,11 @@ export default function DetalleCampanaPage() {
 
   if (!campana) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <p className="text-slate-300 font-medium mb-1">Campaña no encontrada</p>
-        <p className="text-slate-500 text-sm mb-6">Es posible que haya sido eliminada o el enlace sea incorrecto.</p>
+      <div className="flex flex-col items-center justify-center py-28 text-center">
+        <p className="text-slate-200 font-medium mb-1.5">Campaña no encontrada</p>
+        <p className="text-slate-500 text-sm mb-6 max-w-xs leading-relaxed">
+          Es posible que haya sido eliminada o el enlace sea incorrecto.
+        </p>
         <Link
           href="/dashboard/campanas"
           className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
@@ -196,21 +198,21 @@ export default function DetalleCampanaPage() {
           </svg>
           <h1 className="text-sm font-semibold text-white truncate">{campana.nombre}</h1>
           <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${badge.bg} ${badge.text}`}
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${badge.bg} ${badge.text}`}
           >
             {badge.label}
           </span>
         </div>
 
         {/* Right: actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           {enProceso && (
-            <div className="flex items-center gap-2 text-sm text-slate-400 mr-1">
-              <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <svg className="animate-spin w-3.5 h-3.5 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
-              <span>{progreso || faseTexto[fase as Fase] || 'Procesando...'}</span>
+              <span className="text-xs text-slate-400">{progreso || faseTexto[fase as Fase] || 'Procesando...'}</span>
             </div>
           )}
           {fase === 'idle' && (
@@ -227,7 +229,7 @@ export default function DetalleCampanaPage() {
               className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
             >
               Marcar enviados
-              <span className="bg-blue-500 text-blue-100 text-xs px-1.5 py-0.5 rounded-full">
+              <span className="bg-blue-500/60 text-blue-100 text-xs px-1.5 py-0.5 rounded-full tabular-nums">
                 {contactosPendientes.length}
               </span>
             </button>
@@ -235,27 +237,27 @@ export default function DetalleCampanaPage() {
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-5">
         {/* Metrics row */}
         <div className="grid grid-cols-4 gap-3">
-          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
-            <p className="text-xs text-slate-500 mb-1">Sector</p>
+          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3.5">
+            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1.5">Sector</p>
             <p className="text-sm font-medium text-slate-200 truncate">{campana.sector || '—'}</p>
           </div>
-          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
-            <p className="text-xs text-slate-500 mb-1">País</p>
+          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3.5">
+            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1.5">País</p>
             <p className="text-sm font-medium text-slate-200">
               {PAISES_HUNTER.find((p) => p.value === campana.pais)?.label || campana.pais || '—'}
             </p>
           </div>
-          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
-            <p className="text-xs text-slate-500 mb-1">Empresas</p>
+          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3.5">
+            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1.5">Empresas</p>
             <p className="text-sm font-medium text-slate-200 tabular-nums">
               {stats.empresas > 0 ? stats.empresas : '—'}
             </p>
           </div>
-          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
-            <p className="text-xs text-slate-500 mb-1">Contactos</p>
+          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3.5">
+            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1.5">Contactos</p>
             <p className="text-sm font-medium text-slate-200 tabular-nums">{contactos.length}</p>
           </div>
         </div>
@@ -264,41 +266,41 @@ export default function DetalleCampanaPage() {
         {filtros && fase === 'idle' && contactos.length === 0 && (
           <div className="bg-[#111827] border border-white/5 rounded-lg p-5">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
-              Filtros de búsqueda configurados
+              Filtros configurados
             </p>
-            <div className="grid grid-cols-2 gap-x-10 gap-y-3 text-sm">
+            <div className="grid grid-cols-2 gap-x-12 gap-y-3">
               {filtros.sector && (
                 <>
-                  <span className="text-slate-500">Sector</span>
-                  <span className="text-slate-200">{filtros.sector}</span>
+                  <span className="text-xs text-slate-500 self-center">Sector</span>
+                  <span className="text-sm text-slate-200">{filtros.sector}</span>
                 </>
               )}
               {filtros.pais && (
                 <>
-                  <span className="text-slate-500">País</span>
-                  <span className="text-slate-200">
+                  <span className="text-xs text-slate-500 self-center">País</span>
+                  <span className="text-sm text-slate-200">
                     {PAISES_HUNTER.find((p) => p.value === filtros.pais)?.label || filtros.pais}
                   </span>
                 </>
               )}
               {filtros.tamanos?.length > 0 && (
                 <>
-                  <span className="text-slate-500">Tamaño empresa</span>
-                  <span className="text-slate-200">{filtros.tamanos.join(', ')}</span>
+                  <span className="text-xs text-slate-500 self-center">Tamaño empresa</span>
+                  <span className="text-sm text-slate-200">{filtros.tamanos.join(', ')}</span>
                 </>
               )}
               {filtros.departamentos?.length > 0 && (
                 <>
-                  <span className="text-slate-500">Departamentos</span>
-                  <span className="text-slate-200">
+                  <span className="text-xs text-slate-500 self-center">Departamentos</span>
+                  <span className="text-sm text-slate-200">
                     {filtros.departamentos.map((d) => DEPARTAMENTOS_HUNTER[d] || d).join(', ')}
                   </span>
                 </>
               )}
               {filtros.seniority?.length > 0 && (
                 <>
-                  <span className="text-slate-500">Seniority</span>
-                  <span className="text-slate-200">
+                  <span className="text-xs text-slate-500 self-center">Seniority</span>
+                  <span className="text-sm text-slate-200">
                     {filtros.seniority.map((s) => SENIORITY_HUNTER[s] || s).join(', ')}
                   </span>
                 </>
@@ -311,7 +313,7 @@ export default function DetalleCampanaPage() {
         {contactos.length > 0 && (
           <p className="text-sm text-slate-400">
             <span className="text-slate-200 font-medium">{contactos.length} contactos</span>
-            {stats.empresas > 0 && ` en ${stats.empresas} empresas`}
+            {stats.empresas > 0 && ` de ${stats.empresas} empresas`}
             {stats.sinResultados > 0 && (
               <span className="text-slate-600"> · {stats.sinResultados} empresas sin contactos</span>
             )}
@@ -328,12 +330,16 @@ export default function DetalleCampanaPage() {
 
         {/* Progress state */}
         {enProceso && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <svg className="animate-spin w-6 h-6 text-blue-400 mb-4" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-            <p className="text-slate-200 font-medium mb-1">
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-8 h-8 mb-5 relative">
+              <svg className="animate-spin w-8 h-8 text-blue-500/20" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              </svg>
+              <svg className="animate-spin w-8 h-8 text-blue-400 absolute inset-0" fill="none" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+            </div>
+            <p className="text-slate-200 font-medium mb-1.5">
               {fase === 'descubriendo' && 'Descubriendo empresas'}
               {fase === 'enriqueciendo' && 'Buscando contactos'}
               {fase === 'enviando' && 'Procesando envíos'}
@@ -344,9 +350,9 @@ export default function DetalleCampanaPage() {
 
         {/* Empty state */}
         {fase === 'idle' && contactos.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-slate-300 font-medium mb-1">Sin contactos todavía</p>
-            <p className="text-slate-500 text-sm mb-6">
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-slate-200 font-medium mb-1.5">Sin contactos todavía</p>
+            <p className="text-slate-500 text-sm mb-7 max-w-sm leading-relaxed">
               Pulsa "Buscar contactos" para que Hunter descubra empresas
               {filtros?.sector ? ` del sector "${filtros.sector}"` : ' con los filtros configurados'} y extraiga sus emails.
             </p>
