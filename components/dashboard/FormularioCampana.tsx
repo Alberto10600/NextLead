@@ -13,18 +13,23 @@ const CARGOS_DISPONIBLES = [
 
 const PAISES = ['España', 'México', 'Argentina', 'Colombia', 'Chile', 'Perú']
 
+interface FormState extends TFormularioCampana {
+  dominios_texto: string
+}
+
 export default function FormularioCampana() {
   const router = useRouter()
   const [paso, setPaso] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const [form, setForm] = useState<TFormularioCampana>({
+  const [form, setForm] = useState<FormState>({
     nombre: '',
     sector: '',
     pais: 'España',
     descripcion_agencia: '',
     cargos_objetivo: ['CEO', 'Director de Marketing'],
+    dominios_texto: '',
   })
 
   const toggleCargo = (cargo: string) => {
@@ -36,16 +41,36 @@ export default function FormularioCampana() {
     }))
   }
 
+  const parsearDominios = (texto: string): string[] => {
+    return texto
+      .split(/[\n,;]+/)
+      .map((d) => d.trim().toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/, ''))
+      .filter((d) => d.length > 0 && d.includes('.'))
+  }
+
+  const dominiosParsados = parsearDominios(form.dominios_texto)
+
   const handleSubmit = async () => {
+    if (dominiosParsados.length === 0) {
+      setError('Introduce al menos un dominio')
+      return
+    }
+
     setLoading(true)
     setError('')
 
     try {
-      // Crear campaña en Supabase
       const res = await fetch('/api/campanas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          nombre: form.nombre,
+          sector: form.sector,
+          pais: form.pais,
+          descripcion_agencia: form.descripcion_agencia,
+          cargos_objetivo: form.cargos_objetivo,
+          dominios: dominiosParsados,
+        }),
       })
 
       if (!res.ok) {
@@ -68,10 +93,8 @@ export default function FormularioCampana() {
       <div className="flex items-center gap-2 mb-8">
         {[1, 2].map((n) => (
           <div key={n} className="flex items-center gap-2">
-            <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
-                ${paso >= n ? 'bg-blue-600 text-white' : 'bg-[#334155] text-slate-500'}`}
-            >
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
+              ${paso >= n ? 'bg-blue-600 text-white' : 'bg-[#334155] text-slate-500'}`}>
               {n}
             </div>
             {n < 2 && <div className={`w-16 h-0.5 ${paso > n ? 'bg-blue-600' : 'bg-[#334155]'}`} />}
@@ -107,9 +130,7 @@ export default function FormularioCampana() {
               onChange={(e) => setForm((p) => ({ ...p, pais: e.target.value }))}
               className="bg-[#0f172a] border border-[#334155] rounded-md px-3 py-2 text-sm text-slate-200 outline-none focus:border-blue-500"
             >
-              {PAISES.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
+              {PAISES.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
 
@@ -124,8 +145,7 @@ export default function FormularioCampana() {
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
                     ${form.cargos_objetivo.includes(cargo)
                       ? 'bg-blue-600 text-white'
-                      : 'bg-[#334155] text-slate-400 hover:text-slate-200'
-                    }`}
+                      : 'bg-[#334155] text-slate-400 hover:text-slate-200'}`}
                 >
                   {cargo}
                 </button>
@@ -133,9 +153,27 @@ export default function FormularioCampana() {
             </div>
           </div>
 
+          {/* Dominios */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-slate-400 font-medium">
+              Dominios a prospectar
+              {dominiosParsados.length > 0 && (
+                <span className="ml-2 text-blue-400">{dominiosParsados.length} detectados</span>
+              )}
+            </label>
+            <textarea
+              placeholder={'empresa1.es\nempresa2.com\nempresa3.io'}
+              value={form.dominios_texto}
+              onChange={(e) => setForm((p) => ({ ...p, dominios_texto: e.target.value }))}
+              rows={5}
+              className="bg-[#0f172a] border border-[#334155] rounded-md px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 outline-none focus:border-blue-500 resize-none font-mono"
+            />
+            <p className="text-xs text-slate-600">Un dominio por línea, o separados por comas. Puedes pegar URLs completas.</p>
+          </div>
+
           <Button
             onClick={() => setPaso(2)}
-            disabled={!form.nombre || !form.sector || form.cargos_objetivo.length === 0}
+            disabled={!form.nombre || !form.sector || form.cargos_objetivo.length === 0 || dominiosParsados.length === 0}
             className="w-full"
           >
             Continuar →
@@ -147,7 +185,7 @@ export default function FormularioCampana() {
         <div className="space-y-5">
           <div>
             <h2 className="text-lg font-semibold text-slate-200 mb-1">Tu agencia</h2>
-            <p className="text-sm text-slate-400">Describe qué ofreces para personalizar los emails</p>
+            <p className="text-sm text-slate-400">Describe qué ofreces para personalizar los emails más adelante</p>
           </div>
 
           <div className="flex flex-col gap-1">
@@ -156,7 +194,7 @@ export default function FormularioCampana() {
               <span className="ml-1 text-slate-600">({form.descripcion_agencia.length}/200)</span>
             </label>
             <textarea
-              placeholder="Ej: Somos una agencia especializada en SEO y publicidad de pago para ecommerce. Hemos ayudado a más de 50 tiendas online a triplicar sus ventas en 6 meses."
+              placeholder="Ej: Somos una agencia especializada en SEO y publicidad de pago para ecommerce."
               value={form.descripcion_agencia}
               onChange={(e) => setForm((p) => ({ ...p, descripcion_agencia: e.target.value.slice(0, 200) }))}
               rows={4}
@@ -169,26 +207,17 @@ export default function FormularioCampana() {
             <p className="text-xs text-slate-400 font-medium mb-2">RESUMEN</p>
             <p className="text-xs text-slate-400">Campaña: <span className="text-slate-200">{form.nombre}</span></p>
             <p className="text-xs text-slate-400">Sector: <span className="text-slate-200">{form.sector}</span></p>
-            <p className="text-xs text-slate-400">País: <span className="text-slate-200">{form.pais}</span></p>
+            <p className="text-xs text-slate-400">Dominios: <span className="text-slate-200">{dominiosParsados.length} dominios</span></p>
             <p className="text-xs text-slate-400">Cargos: <span className="text-slate-200">{form.cargos_objetivo.join(', ')}</span></p>
           </div>
 
           {error && (
-            <p className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded-md px-3 py-2">
-              {error}
-            </p>
+            <p className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded-md px-3 py-2">{error}</p>
           )}
 
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setPaso(1)} className="flex-1">
-              ← Atrás
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              loading={loading}
-              disabled={!form.descripcion_agencia}
-              className="flex-1"
-            >
+            <Button variant="secondary" onClick={() => setPaso(1)} className="flex-1">← Atrás</Button>
+            <Button onClick={handleSubmit} loading={loading} disabled={!form.descripcion_agencia} className="flex-1">
               Crear campaña
             </Button>
           </div>

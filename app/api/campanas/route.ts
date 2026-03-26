@@ -10,10 +10,14 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { nombre, sector, pais, descripcion_agencia, cargos_objetivo } = body
+  const { nombre, sector, pais, descripcion_agencia, cargos_objetivo, dominios } = body
 
   if (!nombre || !sector || !descripcion_agencia) {
     return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
+  }
+
+  if (!dominios || dominios.length === 0) {
+    return NextResponse.json({ error: 'Introduce al menos un dominio' }, { status: 400 })
   }
 
   const { data, error } = await supabase
@@ -25,6 +29,7 @@ export async function POST(request: Request) {
       pais: pais || 'España',
       descripcion_agencia,
       cargos_objetivo: cargos_objetivo || [],
+      dominios,
       estado: 'borrador',
     })
     .select()
