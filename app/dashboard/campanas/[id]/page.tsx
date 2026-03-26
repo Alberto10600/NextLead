@@ -13,12 +13,18 @@ import Toast from '@/components/ui/Toast'
 
 type Fase = 'idle' | 'descubriendo' | 'enriqueciendo' | 'listo' | 'enviando' | 'completado'
 
-const estadoBadge: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
-  borrador:   'default',
-  procesando: 'info',
-  activa:     'success',
-  pausada:    'warning',
-  completada: 'default',
+const estadoStyles: Record<string, { bg: string; text: string; label: string }> = {
+  borrador:   { bg: 'bg-slate-800', text: 'text-slate-400', label: 'Borrador' },
+  procesando: { bg: 'bg-blue-950', text: 'text-blue-400', label: 'Procesando' },
+  activa:     { bg: 'bg-emerald-950', text: 'text-emerald-400', label: 'Activa' },
+  pausada:    { bg: 'bg-amber-950', text: 'text-amber-400', label: 'Pausada' },
+  completada: { bg: 'bg-slate-800', text: 'text-slate-400', label: 'Completada' },
+}
+
+const faseTexto: Partial<Record<Fase, string>> = {
+  descubriendo: 'Buscando empresas en Hunter...',
+  enriqueciendo: 'Extrayendo contactos...',
+  enviando: 'Procesando...',
 }
 
 export default function DetalleCampanaPage() {
@@ -146,106 +152,145 @@ export default function DetalleCampanaPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Spinner size="lg" />
+      </div>
+    )
   }
 
   if (!campana) {
     return (
-      <div className="p-6 text-center text-slate-400">
-        Campaña no encontrada.{' '}
-        <Link href="/dashboard/campanas" className="text-blue-400">Volver</Link>
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <p className="text-slate-300 font-medium mb-1">Campaña no encontrada</p>
+        <p className="text-slate-500 text-sm mb-6">Es posible que haya sido eliminada o el enlace sea incorrecto.</p>
+        <Link
+          href="/dashboard/campanas"
+          className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+        >
+          ← Volver a campañas
+        </Link>
       </div>
     )
   }
 
   const contactosPendientes = contactos.filter((c) => c.estado === 'pendiente')
   const filtros = campana.filtros_hunter
+  const badge = estadoStyles[campana.estado] || estadoStyles.borrador
+  const enProceso = ['descubriendo', 'enriqueciendo', 'enviando'].includes(fase)
 
   return (
-    <div>
-      {/* Header */}
-      <div className="border-b border-[#334155] bg-[#1e293b] px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/campanas" className="text-slate-400 hover:text-slate-200 text-sm">
-            ← Campañas
+    <div className="min-h-full">
+      {/* Top bar */}
+      <div className="border-b border-white/5 bg-[#111827] px-6 py-4 flex items-center justify-between gap-4">
+        {/* Left: breadcrumb + title + badge */}
+        <div className="flex items-center gap-2 min-w-0">
+          <Link
+            href="/dashboard/campanas"
+            className="text-slate-500 hover:text-slate-300 text-sm transition-colors shrink-0"
+          >
+            Campañas
           </Link>
-          <span className="text-slate-600">/</span>
-          <h1 className="text-base font-semibold text-slate-200">{campana.nombre}</h1>
-          <Badge variant={estadoBadge[campana.estado] || 'default'}>{campana.estado}</Badge>
+          <svg className="w-3.5 h-3.5 text-slate-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <h1 className="text-sm font-semibold text-white truncate">{campana.nombre}</h1>
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${badge.bg} ${badge.text}`}
+          >
+            {badge.label}
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Right: actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          {enProceso && (
+            <div className="flex items-center gap-2 text-sm text-slate-400 mr-1">
+              <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              <span>{progreso || faseTexto[fase as Fase] || 'Procesando...'}</span>
+            </div>
+          )}
           {fase === 'idle' && (
-            <Button onClick={buscarContactos}>
+            <button
+              onClick={buscarContactos}
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
+            >
               Buscar contactos
-            </Button>
+            </button>
           )}
           {fase === 'listo' && contactosPendientes.length > 0 && (
-            <Button onClick={marcarEnviados}>
-              Marcar enviados ({contactosPendientes.length})
-            </Button>
-          )}
-          {['descubriendo', 'enriqueciendo', 'enviando'].includes(fase) && (
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <Spinner size="sm" />
-              {progreso || (fase === 'enviando' ? 'Procesando...' : 'Buscando en Hunter...')}
-            </div>
+            <button
+              onClick={marcarEnviados}
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
+            >
+              Marcar enviados
+              <span className="bg-blue-500 text-blue-100 text-xs px-1.5 py-0.5 rounded-full">
+                {contactosPendientes.length}
+              </span>
+            </button>
           )}
         </div>
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Info campaña */}
-        <div className="grid grid-cols-4 gap-3 text-sm">
-          <div className="bg-[#1e293b] border border-[#334155] rounded-md px-3 py-2">
-            <p className="text-xs text-slate-500">Sector</p>
-            <p className="text-slate-300 truncate">{campana.sector || '—'}</p>
+        {/* Metrics row */}
+        <div className="grid grid-cols-4 gap-3">
+          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
+            <p className="text-xs text-slate-500 mb-1">Sector</p>
+            <p className="text-sm font-medium text-slate-200 truncate">{campana.sector || '—'}</p>
           </div>
-          <div className="bg-[#1e293b] border border-[#334155] rounded-md px-3 py-2">
-            <p className="text-xs text-slate-500">País</p>
-            <p className="text-slate-300">
+          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
+            <p className="text-xs text-slate-500 mb-1">País</p>
+            <p className="text-sm font-medium text-slate-200">
               {PAISES_HUNTER.find((p) => p.value === campana.pais)?.label || campana.pais || '—'}
             </p>
           </div>
-          <div className="bg-[#1e293b] border border-[#334155] rounded-md px-3 py-2">
-            <p className="text-xs text-slate-500">Empresas</p>
-            <p className="text-slate-300">{stats.empresas > 0 ? stats.empresas : '—'}</p>
+          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
+            <p className="text-xs text-slate-500 mb-1">Empresas</p>
+            <p className="text-sm font-medium text-slate-200 tabular-nums">
+              {stats.empresas > 0 ? stats.empresas : '—'}
+            </p>
           </div>
-          <div className="bg-[#1e293b] border border-[#334155] rounded-md px-3 py-2">
-            <p className="text-xs text-slate-500">Contactos</p>
-            <p className="text-slate-300">{contactos.length}</p>
+          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
+            <p className="text-xs text-slate-500 mb-1">Contactos</p>
+            <p className="text-sm font-medium text-slate-200 tabular-nums">{contactos.length}</p>
           </div>
         </div>
 
-        {/* Filtros hunter */}
+        {/* Hunter filters summary — shown only when no contacts yet */}
         {filtros && fase === 'idle' && contactos.length === 0 && (
-          <div className="bg-[#1e293b] border border-[#334155] rounded-lg p-4 space-y-3">
-            <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Filtros de búsqueda</p>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          <div className="bg-[#111827] border border-white/5 rounded-lg p-5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
+              Filtros de búsqueda configurados
+            </p>
+            <div className="grid grid-cols-2 gap-x-10 gap-y-3 text-sm">
               {filtros.sector && (
                 <>
                   <span className="text-slate-500">Sector</span>
-                  <span className="text-slate-300">{filtros.sector}</span>
+                  <span className="text-slate-200">{filtros.sector}</span>
                 </>
               )}
               {filtros.pais && (
                 <>
                   <span className="text-slate-500">País</span>
-                  <span className="text-slate-300">
+                  <span className="text-slate-200">
                     {PAISES_HUNTER.find((p) => p.value === filtros.pais)?.label || filtros.pais}
                   </span>
                 </>
               )}
               {filtros.tamanos?.length > 0 && (
                 <>
-                  <span className="text-slate-500">Tamaños</span>
-                  <span className="text-slate-300">{filtros.tamanos.join(', ')}</span>
+                  <span className="text-slate-500">Tamaño empresa</span>
+                  <span className="text-slate-200">{filtros.tamanos.join(', ')}</span>
                 </>
               )}
               {filtros.departamentos?.length > 0 && (
                 <>
                   <span className="text-slate-500">Departamentos</span>
-                  <span className="text-slate-300">
+                  <span className="text-slate-200">
                     {filtros.departamentos.map((d) => DEPARTAMENTOS_HUNTER[d] || d).join(', ')}
                   </span>
                 </>
@@ -253,7 +298,7 @@ export default function DetalleCampanaPage() {
               {filtros.seniority?.length > 0 && (
                 <>
                   <span className="text-slate-500">Seniority</span>
-                  <span className="text-slate-300">
+                  <span className="text-slate-200">
                     {filtros.seniority.map((s) => SENIORITY_HUNTER[s] || s).join(', ')}
                   </span>
                 </>
@@ -262,16 +307,18 @@ export default function DetalleCampanaPage() {
           </div>
         )}
 
-        {/* Resumen */}
+        {/* Contact summary line */}
         {contactos.length > 0 && (
           <p className="text-sm text-slate-400">
             <span className="text-slate-200 font-medium">{contactos.length} contactos</span>
             {stats.empresas > 0 && ` en ${stats.empresas} empresas`}
-            {stats.sinResultados > 0 && ` · ${stats.sinResultados} empresas sin contactos`}
+            {stats.sinResultados > 0 && (
+              <span className="text-slate-600"> · {stats.sinResultados} empresas sin contactos</span>
+            )}
           </p>
         )}
 
-        {/* Tabla */}
+        {/* Contacts table */}
         {contactos.length > 0 && (
           <TablaContactos
             contactos={contactos}
@@ -279,15 +326,36 @@ export default function DetalleCampanaPage() {
           />
         )}
 
-        {/* Estado vacío */}
+        {/* Progress state */}
+        {enProceso && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <svg className="animate-spin w-6 h-6 text-blue-400 mb-4" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            <p className="text-slate-200 font-medium mb-1">
+              {fase === 'descubriendo' && 'Descubriendo empresas'}
+              {fase === 'enriqueciendo' && 'Buscando contactos'}
+              {fase === 'enviando' && 'Procesando envíos'}
+            </p>
+            <p className="text-slate-500 text-sm">{progreso}</p>
+          </div>
+        )}
+
+        {/* Empty state */}
         {fase === 'idle' && contactos.length === 0 && (
-          <div className="bg-[#1e293b] border border-[#334155] rounded-lg p-16 text-center">
-            <p className="text-slate-400 mb-2">
-              Pulsa "Buscar contactos" para que Hunter descubra empresas y encuentre sus contactos
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-slate-300 font-medium mb-1">Sin contactos todavía</p>
+            <p className="text-slate-500 text-sm mb-6">
+              Pulsa "Buscar contactos" para que Hunter descubra empresas
+              {filtros?.sector ? ` del sector "${filtros.sector}"` : ' con los filtros configurados'} y extraiga sus emails.
             </p>
-            <p className="text-xs text-slate-600">
-              Hunter buscará empresas por {filtros?.sector ? `sector "${filtros.sector}"` : 'los filtros configurados'} y extraerá emails
-            </p>
+            <button
+              onClick={buscarContactos}
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-5 py-2.5 rounded-md transition-colors duration-150"
+            >
+              Buscar contactos
+            </button>
           </div>
         )}
       </div>
