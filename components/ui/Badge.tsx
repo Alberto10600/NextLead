@@ -7,19 +7,19 @@ interface BadgeProps {
 }
 
 const variantClasses = {
-  default: 'bg-slate-700 text-slate-300',
-  success: 'bg-green-900/50 text-green-400',
-  warning: 'bg-amber-900/50 text-amber-400',
-  error:   'bg-red-900/50 text-red-400',
-  info:    'bg-blue-900/50 text-blue-400',
-  plan:    'bg-blue-600 text-white',
+  default: 'bg-slate-800 text-slate-400 border border-slate-700',
+  success: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25',
+  warning: 'bg-amber-500/15 text-amber-400 border border-amber-500/25',
+  error:   'bg-red-500/15 text-red-400 border border-red-500/25',
+  info:    'bg-blue-500/15 text-blue-400 border border-blue-500/25',
+  plan:    'bg-blue-600 text-white border border-blue-500/40',
 }
 
 export default function Badge({ children, variant = 'default', className = '' }: BadgeProps) {
   return (
     <span
       className={`
-        inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+        inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
         ${variantClasses[variant]} ${className}
       `}
     >

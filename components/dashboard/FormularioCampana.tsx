@@ -47,10 +47,10 @@ function ChipMulti<T extends string>({
             type="button"
             onClick={() => onChange(toggleItem(seleccionados, value))}
             className={`
-              px-3 py-2 rounded-md text-xs font-medium text-left transition-all duration-150 border
+              px-3 py-2 rounded-lg text-xs font-medium text-left transition-all duration-150 border
               ${activo
-                ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                : 'bg-[#0f172a] border-[#334155] text-slate-400 hover:border-slate-500 hover:text-slate-300'}
+                ? 'bg-blue-600/20 border-blue-500/40 text-blue-300'
+                : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/[0.08] hover:text-slate-300 hover:border-white/20'}
             `}
           >
             {label}
@@ -60,6 +60,8 @@ function ChipMulti<T extends string>({
     </div>
   )
 }
+
+const PASOS = ['Empresas objetivo', 'Contactos objetivo', 'Campaña']
 
 export default function FormularioCampana() {
   const router = useRouter()
@@ -118,23 +120,50 @@ export default function FormularioCampana() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Indicador de pasos */}
-      <div className="flex items-center gap-2 mb-8">
-        {['Empresas objetivo', 'Contactos objetivo', 'Campaña'].map((label, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-                ${paso > i + 1 ? 'bg-green-600 text-white' :
-                  paso === i + 1 ? 'bg-blue-600 text-white' : 'bg-[#334155] text-slate-500'}`}>
-                {paso > i + 1 ? '✓' : i + 1}
+      {/* Step indicator */}
+      <div className="flex items-center mb-10">
+        {PASOS.map((label, i) => {
+          const num = i + 1
+          const completed = paso > num
+          const active = paso === num
+          return (
+            <div key={i} className="flex items-center flex-1 last:flex-none">
+              <div className="flex items-center gap-2.5 shrink-0">
+                <div
+                  className={`
+                    w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold
+                    transition-all duration-150
+                    ${completed
+                      ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400'
+                      : active
+                        ? 'bg-blue-600/20 border border-blue-500/50 text-blue-300'
+                        : 'bg-white/5 border border-white/10 text-slate-600'}
+                  `}
+                >
+                  {completed ? (
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : num}
+                </div>
+                <span
+                  className={`text-xs font-medium hidden sm:block transition-all duration-150
+                    ${active ? 'text-slate-200' : completed ? 'text-slate-500' : 'text-slate-600'}`}
+                >
+                  {label}
+                </span>
               </div>
-              <span className={`text-xs hidden sm:block ${paso === i + 1 ? 'text-slate-200' : 'text-slate-500'}`}>
-                {label}
-              </span>
+              {i < PASOS.length - 1 && (
+                <div className="flex-1 mx-3">
+                  <div
+                    className={`h-px transition-all duration-150
+                      ${paso > num ? 'bg-emerald-500/40' : 'bg-white/8'}`}
+                  />
+                </div>
+              )}
             </div>
-            {i < 2 && <div className={`w-8 h-0.5 ml-1 ${paso > i + 1 ? 'bg-green-600' : 'bg-[#334155]'}`} />}
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* ─── PASO 1: Empresas objetivo ─── */}
@@ -142,16 +171,20 @@ export default function FormularioCampana() {
         <div className="space-y-6">
           <div>
             <h2 className="text-lg font-semibold text-slate-200 mb-1">¿Qué empresas buscas?</h2>
-            <p className="text-sm text-slate-400">Hunter buscará empresas que coincidan con estos filtros</p>
+            <p className="text-sm text-slate-500">Hunter buscará empresas que coincidan con estos filtros</p>
           </div>
 
           {/* Sector */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-slate-400 font-medium uppercase tracking-wide">Sector / Industria</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium uppercase tracking-wider text-slate-500">
+              Sector / Industria
+            </label>
             <select
               value={form.sector}
               onChange={(e) => setForm((p) => ({ ...p, sector: e.target.value }))}
-              className="bg-[#0f172a] border border-[#334155] rounded-md px-3 py-2.5 text-sm text-slate-200 outline-none focus:border-blue-500"
+              className="bg-[#111827] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-slate-200 outline-none
+                focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all duration-150
+                [&>option]:bg-[#111827] [&>option]:text-slate-200"
             >
               <option value="">-- Selecciona un sector --</option>
               {SECTORES_HUNTER.map((s) => (
@@ -169,12 +202,16 @@ export default function FormularioCampana() {
           </div>
 
           {/* País */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-slate-400 font-medium uppercase tracking-wide">País</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium uppercase tracking-wider text-slate-500">
+              País
+            </label>
             <select
               value={form.pais}
               onChange={(e) => setForm((p) => ({ ...p, pais: e.target.value }))}
-              className="bg-[#0f172a] border border-[#334155] rounded-md px-3 py-2.5 text-sm text-slate-200 outline-none focus:border-blue-500"
+              className="bg-[#111827] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-slate-200 outline-none
+                focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all duration-150
+                [&>option]:bg-[#111827] [&>option]:text-slate-200"
             >
               {PAISES_HUNTER.map((p) => (
                 <option key={p.value} value={p.value}>{p.label}</option>
@@ -184,9 +221,9 @@ export default function FormularioCampana() {
 
           {/* Tamaño empresa */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs text-slate-400 font-medium uppercase tracking-wide">
+            <label className="text-xs font-medium uppercase tracking-wider text-slate-500">
               Tamaño de empresa
-              <span className="ml-2 text-slate-600 normal-case">({form.tamanos.length} seleccionados)</span>
+              <span className="ml-2 text-slate-600 normal-case font-normal">({form.tamanos.length} seleccionados)</span>
             </label>
             <ChipMulti
               opciones={TAMANOS}
@@ -211,14 +248,14 @@ export default function FormularioCampana() {
         <div className="space-y-6">
           <div>
             <h2 className="text-lg font-semibold text-slate-200 mb-1">¿A quién quieres llegar?</h2>
-            <p className="text-sm text-slate-400">Filtra por departamento y nivel de seniority</p>
+            <p className="text-sm text-slate-500">Filtra por departamento y nivel de seniority</p>
           </div>
 
           {/* Departamentos */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs text-slate-400 font-medium uppercase tracking-wide">
+            <label className="text-xs font-medium uppercase tracking-wider text-slate-500">
               Departamento
-              <span className="ml-2 text-slate-600 normal-case">({form.departamentos.length} seleccionados)</span>
+              <span className="ml-2 text-slate-600 normal-case font-normal">({form.departamentos.length} seleccionados)</span>
             </label>
             <ChipMulti
               opciones={DEPARTAMENTOS}
@@ -229,9 +266,9 @@ export default function FormularioCampana() {
 
           {/* Seniority */}
           <div className="flex flex-col gap-2">
-            <label className="text-xs text-slate-400 font-medium uppercase tracking-wide">
+            <label className="text-xs font-medium uppercase tracking-wider text-slate-500">
               Nivel / Seniority
-              <span className="ml-2 text-slate-600 normal-case">({form.seniority.length} seleccionados)</span>
+              <span className="ml-2 text-slate-600 normal-case font-normal">({form.seniority.length} seleccionados)</span>
             </label>
             <ChipMulti
               opciones={SENIORIDADES}
@@ -259,7 +296,7 @@ export default function FormularioCampana() {
         <div className="space-y-6">
           <div>
             <h2 className="text-lg font-semibold text-slate-200 mb-1">Datos de la campaña</h2>
-            <p className="text-sm text-slate-400">Nombre y descripción para personalizar los emails</p>
+            <p className="text-sm text-slate-500">Nombre y descripción para personalizar los emails</p>
           </div>
 
           <Input
@@ -269,39 +306,43 @@ export default function FormularioCampana() {
             onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))}
           />
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-400 font-medium">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium uppercase tracking-wider text-slate-500">
               Descripción de tu agencia
-              <span className="ml-1 text-slate-600">({form.descripcion_agencia.length}/200)</span>
+              <span className="ml-2 text-slate-600 normal-case font-normal">({form.descripcion_agencia.length}/200)</span>
             </label>
             <textarea
               placeholder="Ej: Somos una agencia de SEO y paid media especializada en ecommerce. Hemos triplicado ventas a más de 50 tiendas online."
               value={form.descripcion_agencia}
               onChange={(e) => setForm((p) => ({ ...p, descripcion_agencia: e.target.value.slice(0, 200) }))}
               rows={4}
-              className="bg-[#0f172a] border border-[#334155] rounded-md px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 outline-none focus:border-blue-500 resize-none"
+              className="bg-[#111827] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-slate-200
+                placeholder:text-slate-600 outline-none transition-all duration-150
+                focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/40 resize-none"
             />
           </div>
 
-          {/* Resumen */}
-          <div className="bg-[#0f172a] border border-[#334155] rounded-md p-4 space-y-2">
-            <p className="text-xs text-slate-400 font-medium uppercase tracking-wide mb-2">Resumen de búsqueda</p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-              <span className="text-slate-500">Sector</span>
-              <span className="text-slate-300">{sectorFinal || '—'}</span>
-              <span className="text-slate-500">País</span>
-              <span className="text-slate-300">{PAISES_HUNTER.find(p => p.value === form.pais)?.label || form.pais}</span>
-              <span className="text-slate-500">Tamaños</span>
-              <span className="text-slate-300">{form.tamanos.length > 0 ? form.tamanos.join(', ') : '—'}</span>
-              <span className="text-slate-500">Departamentos</span>
-              <span className="text-slate-300">{form.departamentos.length} seleccionados</span>
-              <span className="text-slate-500">Seniority</span>
-              <span className="text-slate-300">{form.seniority.join(', ')}</span>
+          {/* Summary */}
+          <div className="bg-white/[0.03] border border-white/5 rounded-xl p-5 space-y-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Resumen de búsqueda</p>
+            <div className="space-y-2">
+              {[
+                ['Sector', sectorFinal || '—'],
+                ['País', PAISES_HUNTER.find(p => p.value === form.pais)?.label || form.pais],
+                ['Tamaños', form.tamanos.length > 0 ? form.tamanos.join(', ') : '—'],
+                ['Departamentos', `${form.departamentos.length} seleccionados`],
+                ['Seniority', form.seniority.join(', ')],
+              ].map(([key, value]) => (
+                <div key={key} className="flex items-baseline justify-between gap-4">
+                  <span className="text-xs text-slate-500 shrink-0">{key}</span>
+                  <span className="text-xs text-slate-300 text-right">{value}</span>
+                </div>
+              ))}
             </div>
           </div>
 
           {error && (
-            <p className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded-md px-3 py-2">{error}</p>
+            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5">{error}</p>
           )}
 
           <div className="flex gap-2">
