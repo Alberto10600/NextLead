@@ -23,6 +23,8 @@ export async function POST(request: Request) {
       nombre: nombre.trim(),
       sector: '',
       pais: '',
+      descripcion_agencia: '',
+      cargos_objetivo: [],
       estado: 'borrador',
     })
     .select()
