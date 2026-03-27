@@ -45,15 +45,26 @@ function descargarCSV(contactos: Contacto[]) {
   URL.revokeObjectURL(url)
 }
 
+const PAGE_SIZE = 50
+
 export default function TablaContactos({ contactos, onExcluir, onRegenerar }: TablaContactosProps) {
   const [contactoSeleccionado, setContactoSeleccionado] = useState<Contacto | null>(null)
+  const [pagina, setPagina] = useState(0)
+
+  const totalPaginas = Math.ceil(contactos.length / PAGE_SIZE)
+  const paginaActual = Math.min(pagina, Math.max(0, totalPaginas - 1))
+  const contactosPagina = contactos.slice(paginaActual * PAGE_SIZE, (paginaActual + 1) * PAGE_SIZE)
+  const inicio = paginaActual * PAGE_SIZE + 1
+  const fin = Math.min((paginaActual + 1) * PAGE_SIZE, contactos.length)
 
   return (
     <>
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs text-slate-500">
-          {contactos.length} contacto{contactos.length !== 1 ? 's' : ''}
+          {contactos.length > PAGE_SIZE
+            ? `${inicio}–${fin} de ${contactos.length} contactos`
+            : `${contactos.length} contacto${contactos.length !== 1 ? 's' : ''}`}
         </p>
         <button
           onClick={() => descargarCSV(contactos)}
@@ -96,7 +107,7 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
                 </td>
               </tr>
             )}
-            {contactos.map((c) => {
+            {contactosPagina.map((c) => {
               const badge = estadoStyles[c.estado] || estadoStyles.pendiente
               return (
                 <tr
@@ -144,6 +155,63 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
           </tbody>
         </table>
       </div>
+
+      {/* Paginación */}
+      {totalPaginas > 1 && (
+        <div className="flex items-center justify-between mt-3">
+          <p className="text-xs text-slate-600">
+            Página {paginaActual + 1} de {totalPaginas}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPagina(0)}
+              disabled={paginaActual === 0}
+              className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              «
+            </button>
+            <button
+              onClick={() => setPagina((p) => Math.max(0, p - 1))}
+              disabled={paginaActual === 0}
+              className="px-2.5 py-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              ‹ Anterior
+            </button>
+
+            {/* Números de página — muestra máx 5 alrededor de la actual */}
+            {Array.from({ length: totalPaginas }, (_, i) => i)
+              .filter((i) => Math.abs(i - paginaActual) <= 2)
+              .map((i) => (
+                <button
+                  key={i}
+                  onClick={() => setPagina(i)}
+                  className={`w-8 h-7 text-xs rounded transition-colors ${
+                    i === paginaActual
+                      ? 'bg-blue-600/20 border border-blue-500/30 text-blue-300 font-medium'
+                      : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+            <button
+              onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
+              disabled={paginaActual >= totalPaginas - 1}
+              className="px-2.5 py-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              Siguiente ›
+            </button>
+            <button
+              onClick={() => setPagina(totalPaginas - 1)}
+              disabled={paginaActual >= totalPaginas - 1}
+              className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/5 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              »
+            </button>
+          </div>
+        </div>
+      )}
 
       {contactoSeleccionado && (
         <ModalEmail
