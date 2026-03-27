@@ -32,6 +32,7 @@ export interface Perfil {
   stripe_customer_id?: string
   stripe_subscription_id?: string
   creditos_restantes: number
+  hunter_api_key?: string
   created_at: string
 }
 

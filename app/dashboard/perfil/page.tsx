@@ -15,6 +15,12 @@ export default function PerfilPage() {
   const [agencia, setAgencia] = useState('')
   const [guardandoPerfil, setGuardandoPerfil] = useState(false)
 
+  // Integraciones
+  const [hunterKey, setHunterKey] = useState('')
+  const [hunterKeyActual, setHunterKeyActual] = useState<string | undefined>(undefined)
+  const [editandoHunter, setEditandoHunter] = useState(false)
+  const [guardandoHunter, setGuardandoHunter] = useState(false)
+
   // Contraseña
   const [passActual, setPassActual] = useState('')
   const [passNueva, setPassNueva] = useState('')
@@ -30,6 +36,7 @@ export default function PerfilPage() {
         setPerfil(perfil)
         setNombre(perfil?.nombre || '')
         setAgencia(perfil?.agencia || '')
+        setHunterKeyActual(perfil?.hunter_api_key || undefined)
         setLoading(false)
       })
   }, [])
@@ -79,6 +86,28 @@ export default function PerfilPage() {
       setToast({ msg: (e as Error).message, tipo: 'error' })
     } finally {
       setGuardandoPass(false)
+    }
+  }
+
+  const guardarHunterKey = async () => {
+    if (!hunterKey.trim()) return
+    setGuardandoHunter(true)
+    try {
+      const res = await fetch('/api/perfil', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hunter_api_key: hunterKey }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setHunterKeyActual(data.perfil?.hunter_api_key)
+      setHunterKey('')
+      setEditandoHunter(false)
+      setToast({ msg: 'API key de Hunter guardada', tipo: 'success' })
+    } catch (e: unknown) {
+      setToast({ msg: (e as Error).message, tipo: 'error' })
+    } finally {
+      setGuardandoHunter(false)
     }
   }
 
@@ -182,6 +211,73 @@ export default function PerfilPage() {
                   <p className="text-sm font-semibold text-gray-900">{value}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Integraciones */}
+        <div className="bg-white border border-gray-200 rounded-lg">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <p className="text-sm font-semibold text-gray-900">Integraciones</p>
+            <p className="text-xs text-gray-400 mt-0.5">Conecta tus propias API keys para mayor control y reducir costes</p>
+          </div>
+          <div className="px-5 py-5 space-y-4">
+            {/* Hunter.io */}
+            <div>
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">Hunter.io API Key</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Usa tu propia cuenta de Hunter para buscar contactos. Sin key, se usa la cuenta compartida de la plataforma.
+                  </p>
+                </div>
+                {hunterKeyActual && !editandoHunter && (
+                  <button
+                    onClick={() => setEditandoHunter(true)}
+                    className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 px-2.5 py-1 rounded-md transition-colors shrink-0 ml-4"
+                  >
+                    Cambiar
+                  </button>
+                )}
+              </div>
+
+              {hunterKeyActual && !editandoHunter ? (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+                  <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm text-green-700 font-mono">{hunterKeyActual}</span>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    value={hunterKey}
+                    onChange={(e) => setHunterKey(e.target.value)}
+                    placeholder="hs_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 font-mono placeholder:text-gray-300 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                  />
+                  <button
+                    onClick={guardarHunterKey}
+                    disabled={guardandoHunter || !hunterKey.trim()}
+                    className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-3 py-2 rounded-md transition-colors shrink-0"
+                  >
+                    {guardandoHunter ? <Spinner size="sm" /> : null}
+                    Guardar
+                  </button>
+                  {editandoHunter && (
+                    <button
+                      onClick={() => { setEditandoHunter(false); setHunterKey('') }}
+                      className="text-sm text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-2 rounded-md transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                </div>
+              )}
+              <p className="text-xs text-gray-400 mt-1.5">
+                Consigue tu API key gratuita en{' '}
+                <span className="text-orange-500">hunter.io/api-keys</span>
+              </p>
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { sleep } from './utils'
 import type { FiltrosHunter } from '@/types'
 
 const HUNTER_BASE = 'https://api.hunter.io/v2'
-const API_KEY = () => process.env.HUNTER_API_KEY!
+const API_KEY = (userKey?: string) => userKey || process.env.HUNTER_API_KEY || ''
 
 export interface HunterContacto {
   nombre?: string
@@ -26,10 +26,11 @@ export interface DiscoverEmpresa {
 
 export async function descubrirEmpresas(
   filtros: FiltrosHunter,
-  limite = 20
+  limite = 20,
+  userKey?: string
 ): Promise<DiscoverEmpresa[]> {
-  const key = API_KEY()
-  if (!key) throw new Error('HUNTER_API_KEY no configurada en .env.local')
+  const key = API_KEY(userKey)
+  if (!key) throw new Error('API key de Hunter no configurada. Añádela en tu perfil o contacta con soporte.')
 
   const params = new URLSearchParams({ api_key: key, limit: String(limite) })
 
@@ -77,9 +78,10 @@ async function fetchPagina(
   dominio: string,
   offset: number,
   limit = PAGE_SIZE,
+  userKey?: string,
 ): Promise<{ emails: HunterContacto[]; total: number }> {
-  const key = API_KEY()
-  if (!key) throw new Error('HUNTER_API_KEY no configurada en .env.local')
+  const key = API_KEY(userKey)
+  if (!key) throw new Error('API key de Hunter no configurada. Añádela en tu perfil o contacta con soporte.')
 
   const params = new URLSearchParams({
     domain:  dominio,
@@ -106,7 +108,7 @@ async function fetchPagina(
     if (res.status === 400 && data.errors?.some(e => e.id === 'pagination_error')) {
       if (limit > 10) {
         console.log(`[Hunter] plan gratuito detectado, reintentando con limit=10`)
-        return fetchPagina(dominio, offset, 10)
+        return fetchPagina(dominio, offset, 10, userKey)
       }
       return { emails: [], total: 0 }
     }
@@ -137,8 +139,8 @@ async function fetchPagina(
  * Devuelve TODOS los emails de un dominio paginando automáticamente.
  * Detecta el límite real del plan (10 en free, 100 en paid) y pagina con él.
  */
-export async function buscarTodosLosContactos(dominio: string): Promise<HunterContacto[]> {
-  const primera = await fetchPagina(dominio, 0)
+export async function buscarTodosLosContactos(dominio: string, userKey?: string): Promise<HunterContacto[]> {
+  const primera = await fetchPagina(dominio, 0, PAGE_SIZE, userKey)
   const todos = [...primera.emails]
 
   // El límite efectivo = cuántos trajo la primera página (10 en free, 100 en paid)
@@ -149,7 +151,7 @@ export async function buscarTodosLosContactos(dominio: string): Promise<HunterCo
 
   while (ultimaPaginaLlena) {
     await sleep(300)
-    const pagina = await fetchPagina(dominio, offset, limite)
+    const pagina = await fetchPagina(dominio, offset, limite, userKey)
     if (pagina.emails.length === 0) break
     todos.push(...pagina.emails)
     offset += limite
