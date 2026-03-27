@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/NextLead && npx tsc --noEmit 2>&1 | tail -20 || echo '{\"systemMessage\": \"⚠️ TypeScript errors detected — fix before continuing\"}'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/NextLead && git status --porcelain | grep -q . && echo '{\"systemMessage\": \"⚠️ Uncommitted changes detected. Run git add + git commit + git push before finishing.\"}' || true"
+          }
+        ]
+      }
+    ]
+  }
+}

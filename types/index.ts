@@ -98,6 +98,13 @@ export interface HistorialContacto {
   total_contactos: number
 }
 
+export const LIMITES_PLAN: Record<Plan, { precio_mensual: number; contactos_mes: number; campanas_activas: number; seguimientos: number }> = {
+  free:     { precio_mensual: 0,   contactos_mes: 100,   campanas_activas: 1,   seguimientos: 0 },
+  starter:  { precio_mensual: 29,  contactos_mes: 500,   campanas_activas: 3,   seguimientos: 1 },
+  pro:      { precio_mensual: 79,  contactos_mes: 2000,  campanas_activas: 10,  seguimientos: 3 },
+  business: { precio_mensual: 199, contactos_mes: 10000, campanas_activas: 999, seguimientos: 5 },
+}
+
 // Etiquetas en español para los valores de Hunter
 export const DEPARTAMENTOS_HUNTER: Record<HunterDepartamento, string> = {
   executive:     'Dirección / C-Suite',
