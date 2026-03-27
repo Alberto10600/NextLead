@@ -1,22 +1,21 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Campana, Contacto } from '@/types'
-import { PAISES_HUNTER, DEPARTAMENTOS_HUNTER, SENIORITY_HUNTER } from '@/types'
 import TablaContactos from '@/components/dashboard/TablaContactos'
 import Toast from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
 
 type Fase = 'idle' | 'buscando' | 'listo' | 'enviando' | 'completado'
 
-const estadoStyles: Record<string, { bg: string; text: string; label: string }> = {
-  borrador:   { bg: 'bg-slate-800', text: 'text-gray-500', label: 'Borrador' },
-  procesando: { bg: 'bg-blue-950', text: 'text-blue-400', label: 'Procesando' },
-  activa:     { bg: 'bg-emerald-950', text: 'text-emerald-400', label: 'Activa' },
-  pausada:    { bg: 'bg-amber-950', text: 'text-amber-400', label: 'Pausada' },
-  completada: { bg: 'bg-slate-800', text: 'text-gray-500', label: 'Completada' },
+const estadoBadge: Record<string, { bg: string; text: string; label: string }> = {
+  borrador:   { bg: 'bg-gray-100',    text: 'text-gray-500',    label: 'Borrador' },
+  procesando: { bg: 'bg-blue-50',     text: 'text-blue-600',    label: 'Procesando' },
+  activa:     { bg: 'bg-emerald-50',  text: 'text-emerald-600', label: 'Activa' },
+  pausada:    { bg: 'bg-amber-50',    text: 'text-amber-600',   label: 'Pausada' },
+  completada: { bg: 'bg-gray-100',    text: 'text-gray-500',    label: 'Completada' },
 }
 
 function parseDominios(texto: string): string[] {
@@ -28,6 +27,7 @@ function parseDominios(texto: string): string[] {
 
 export default function DetalleCampanaPage() {
   const { id } = useParams<{ id: string }>()
+  const router = useRouter()
   const [campana, setCampana] = useState<Campana | null>(null)
   const [contactos, setContactos] = useState<Contacto[]>([])
   const [fase, setFase] = useState<Fase>('idle')
@@ -35,6 +35,8 @@ export default function DetalleCampanaPage() {
   const [toast, setToast] = useState<{ msg: string; tipo: 'success' | 'error' | 'info' } | null>(null)
   const [loading, setLoading] = useState(true)
   const [dominiosTexto, setDominiosTexto] = useState('')
+  const [mostrarAnadir, setMostrarAnadir] = useState(false)
+  const [dominiosNuevos, setDominiosNuevos] = useState('')
 
   const cargarCampana = useCallback(async () => {
     const res = await fetch(`/api/campanas/${id}`)
@@ -54,28 +56,36 @@ export default function DetalleCampanaPage() {
   useEffect(() => { cargarCampana() }, [cargarCampana])
 
   const dominiosParsed = parseDominios(dominiosTexto)
+  const dominiosNuevosParsed = parseDominios(dominiosNuevos)
 
-  const buscarContactos = async () => {
-    if (!campana || dominiosParsed.length === 0) return
+  // Guardar dominios en la BD
+  const guardarDominios = async (dominios: string[]) => {
+    await fetch(`/api/campanas/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dominios }),
+    })
+  }
+
+  const buscarContactos = async (dominios: string[]) => {
+    if (!campana || dominios.length === 0) return
     setFase('buscando')
 
     try {
-      const filtros = campana.filtros_hunter
+      // Guardar dominios en BD antes de buscar
+      await guardarDominios([...new Set([...dominiosParsed, ...dominios])])
+
       const res = await fetch('/api/enriquecer-contactos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dominios: dominiosParsed,
-          departamentos: filtros?.departamentos || [],
-          seniority: filtros?.seniority || [],
-        }),
+        body: JSON.stringify({ dominios }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error buscando contactos')
 
       if (data.total === 0) {
-        setToast({ msg: 'Hunter no encontró contactos en estos dominios. Prueba con otros dominios o amplía los filtros.', tipo: 'info' })
-        setFase('idle')
+        setToast({ msg: 'Hunter no encontró contactos en estos dominios.', tipo: 'info' })
+        setFase(contactos.length > 0 ? 'listo' : 'idle')
         return
       }
 
@@ -90,29 +100,12 @@ export default function DetalleCampanaPage() {
       setContactos(data2.contactos)
       setStats({ sinResultados: data.dominios_sin_resultados?.length || 0 })
       setFase('listo')
-      setToast({ msg: `${data2.contactos.length} contactos encontrados en ${dominiosParsed.length} dominios`, tipo: 'success' })
+      setMostrarAnadir(false)
+      setDominiosNuevos('')
+      setToast({ msg: `${data2.contactos.length} contactos encontrados en ${dominios.length} dominio${dominios.length !== 1 ? 's' : ''}`, tipo: 'success' })
     } catch (e: unknown) {
       setToast({ msg: (e as Error).message, tipo: 'error' })
-      setFase('idle')
-    }
-  }
-
-  const marcarEnviados = async () => {
-    setFase('enviando')
-    try {
-      const res = await fetch('/api/enviar-campana', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campana_id: id }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      setToast({ msg: `${data.enviados} contactos marcados como enviados`, tipo: 'success' })
-      setFase('completado')
-      await cargarCampana()
-    } catch (e: unknown) {
-      setToast({ msg: (e as Error).message, tipo: 'error' })
-      setFase('listo')
+      setFase(contactos.length > 0 ? 'listo' : 'idle')
     }
   }
 
@@ -120,25 +113,22 @@ export default function DetalleCampanaPage() {
     setContactos((prev) => prev.filter((c) => c.id !== contactoId))
   }
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>
-  }
+  if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>
 
   if (!campana) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <p className="text-gray-700 font-medium mb-1">Campaña no encontrada</p>
-        <Link href="/dashboard/campanas" className="text-sm text-blue-400 hover:text-blue-300 transition-colors mt-4">
+        <Link href="/dashboard/campanas" className="text-sm text-orange-500 hover:text-orange-600 mt-4">
           ← Volver a campañas
         </Link>
       </div>
     )
   }
 
-  const contactosPendientes = contactos.filter((c) => c.estado === 'pendiente')
-  const filtros = campana.filtros_hunter
-  const badge = estadoStyles[campana.estado] || estadoStyles.borrador
+  const badge = estadoBadge[campana.estado] || estadoBadge.borrador
   const enProceso = fase === 'buscando' || fase === 'enviando'
+  const tieneContactos = contactos.length > 0
 
   return (
     <div className="min-h-full">
@@ -148,7 +138,7 @@ export default function DetalleCampanaPage() {
           <Link href="/dashboard/campanas" className="text-gray-400 hover:text-gray-700 text-sm transition-colors shrink-0">
             Campañas
           </Link>
-          <svg className="w-3.5 h-3.5 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
           <h1 className="text-sm font-semibold text-gray-900 truncate">{campana.nombre}</h1>
@@ -159,145 +149,126 @@ export default function DetalleCampanaPage() {
 
         <div className="flex items-center gap-2 shrink-0">
           {enProceso && (
-            <div className="flex items-center gap-2 text-sm text-gray-500 mr-1">
-              <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <svg className="animate-spin w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
-              <span>{fase === 'buscando' ? 'Buscando contactos en Hunter...' : 'Procesando...'}</span>
+              <span>Buscando en Hunter...</span>
             </div>
           )}
-          {fase === 'idle' && (
+
+          {/* Editar */}
+          <button
+            onClick={() => router.push(`/dashboard/campanas/${id}/editar`)}
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 px-3 py-2 rounded-md transition-colors"
+          >
+            Editar
+          </button>
+
+          {/* Añadir dominios (cuando ya hay contactos) */}
+          {tieneContactos && !enProceso && (
             <button
-              onClick={buscarContactos}
-              disabled={dominiosParsed.length === 0}
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-gray-900 text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
+              onClick={() => setMostrarAnadir((v) => !v)}
+              className={`inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border transition-colors ${
+                mostrarAnadir
+                  ? 'bg-orange-50 text-orange-600 border-orange-200'
+                  : 'text-gray-500 hover:text-gray-700 border-gray-200 hover:border-gray-300'
+              }`}
             >
-              Buscar contactos
+              + Añadir dominios
             </button>
           )}
-          {fase === 'listo' && contactosPendientes.length > 0 && (
+
+          {/* Buscar (cuando no hay contactos) */}
+          {!tieneContactos && !enProceso && (
             <button
-              onClick={marcarEnviados}
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-gray-900 text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
+              onClick={() => buscarContactos(dominiosParsed)}
+              disabled={dominiosParsed.length === 0}
+              className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
             >
-              Marcar enviados
-              <span className="bg-blue-500 text-blue-100 text-xs px-1.5 py-0.5 rounded-full">
-                {contactosPendientes.length}
-              </span>
+              Buscar contactos
             </button>
           )}
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
-        {/* Metrics row */}
+      <div className="p-6 space-y-5">
+        {/* Metrics */}
         <div className="grid grid-cols-4 gap-3">
-          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-            <p className="text-xs text-gray-400 mb-1">Sector</p>
-            <p className="text-sm font-medium text-gray-800 truncate">{campana.sector || '—'}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-            <p className="text-xs text-gray-400 mb-1">País</p>
-            <p className="text-sm font-medium text-gray-800">
-              {PAISES_HUNTER.find((p) => p.value === campana.pais)?.label || campana.pais || '—'}
-            </p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-            <p className="text-xs text-gray-400 mb-1">Dominios</p>
-            <p className="text-sm font-medium text-gray-800 tabular-nums">
-              {dominiosParsed.length > 0 ? dominiosParsed.length : '—'}
-            </p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-            <p className="text-xs text-gray-400 mb-1">Contactos</p>
-            <p className="text-sm font-medium text-gray-800 tabular-nums">{contactos.length}</p>
-          </div>
+          {[
+            { label: 'Campaña', value: campana.nombre },
+            { label: 'Dominios buscados', value: dominiosParsed.length || '—' },
+            { label: 'Contactos', value: contactos.length },
+            { label: 'Sin resultados', value: stats.sinResultados || '—' },
+          ].map(({ label, value }) => (
+            <div key={label} className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+              <p className="text-xs text-gray-400 mb-1">{label}</p>
+              <p className="text-sm font-semibold text-gray-900 truncate">{value}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Domain input + filter summary */}
-        {(fase === 'idle' || fase === 'buscando') && contactos.length === 0 && (
-          <div className="grid grid-cols-3 gap-6">
-            <div className="col-span-2 bg-white border border-gray-200 rounded-lg p-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                Dominios objetivo
-              </p>
-              <p className="text-xs text-gray-400 mb-3">
-                Pega los dominios de las empresas a prospectar. Uno por línea, o separados por comas.
-              </p>
-              <textarea
-                value={dominiosTexto}
-                onChange={(e) => setDominiosTexto(e.target.value)}
-                placeholder={'stripe.com\nshopify.com\nvercel.com'}
-                rows={8}
-                disabled={enProceso}
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 placeholder:text-gray-600 font-mono outline-none focus:ring-1 focus:ring-orange-400/40 focus:border-orange-400/40 resize-none transition-all duration-150 disabled:opacity-50"
-              />
-              {dominiosParsed.length > 0 && (
-                <p className="text-xs text-gray-400 mt-2">
-                  {dominiosParsed.length} dominio{dominiosParsed.length !== 1 ? 's' : ''} detectado{dominiosParsed.length !== 1 ? 's' : ''}
-                </p>
-              )}
-            </div>
-
-            {filtros && (
-              <div className="bg-white border border-gray-200 rounded-lg p-5">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-                  Filtros de contacto
-                </p>
-                <div className="space-y-4 text-sm">
-                  {filtros.departamentos?.length > 0 && (
-                    <div>
-                      <p className="text-xs text-gray-400 mb-1.5">Departamentos</p>
-                      <div className="flex flex-wrap gap-1">
-                        {filtros.departamentos.map((d) => (
-                          <span key={d} className="bg-blue-600/15 border border-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded-full">
-                            {DEPARTAMENTOS_HUNTER[d] || d}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {filtros.seniority?.length > 0 && (
-                    <div>
-                      <p className="text-xs text-gray-400 mb-1.5">Seniority</p>
-                      <div className="flex flex-wrap gap-1">
-                        {filtros.seniority.map((s) => (
-                          <span key={s} className="bg-orange-500/15 border border-orange-400/20 text-violet-400 text-xs px-2 py-0.5 rounded-full">
-                            {SENIORITY_HUNTER[s] || s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {filtros.tamanos?.length > 0 && (
-                    <div>
-                      <p className="text-xs text-gray-400 mb-1.5">Tamaños</p>
-                      <div className="flex flex-wrap gap-1">
-                        {filtros.tamanos.map((t) => (
-                          <span key={t} className="bg-white/5 border border-gray-200 text-gray-500 text-xs px-2 py-0.5 rounded-full">
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+        {/* Input dominios — primera búsqueda */}
+        {!tieneContactos && !enProceso && (
+          <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Dominios objetivo</p>
+            <p className="text-xs text-gray-400 mb-3">Pega los dominios de las empresas a prospectar. Uno por línea, comas o URLs completas.</p>
+            <textarea
+              value={dominiosTexto}
+              onChange={(e) => setDominiosTexto(e.target.value)}
+              placeholder={'stripe.com\nshopify.com\nvercel.com'}
+              rows={6}
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 font-mono outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 resize-none transition-all"
+            />
+            {dominiosParsed.length > 0 && (
+              <p className="text-xs text-gray-400 mt-2">{dominiosParsed.length} dominio{dominiosParsed.length !== 1 ? 's' : ''} detectado{dominiosParsed.length !== 1 ? 's' : ''}</p>
             )}
           </div>
         )}
 
-        {/* Results summary */}
-        {contactos.length > 0 && (
-          <p className="text-sm text-gray-500">
-            <span className="text-gray-800 font-medium">{contactos.length} contactos</span>
-            {stats.sinResultados > 0 && ` · ${stats.sinResultados} dominios sin resultados`}
-          </p>
+        {/* Panel añadir dominios — cuando ya hay contactos */}
+        {mostrarAnadir && tieneContactos && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-5">
+            <p className="text-xs font-semibold text-orange-700 uppercase tracking-wider mb-1">Añadir más dominios</p>
+            <p className="text-xs text-orange-600/70 mb-3">Los nuevos contactos se añadirán a los existentes. No se duplicarán emails ya guardados.</p>
+            <textarea
+              value={dominiosNuevos}
+              onChange={(e) => setDominiosNuevos(e.target.value)}
+              placeholder={'nuevaempresa.com\notraempresa.es'}
+              rows={4}
+              className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 font-mono outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 resize-none transition-all"
+            />
+            <div className="flex items-center gap-2 mt-3">
+              <button
+                onClick={() => buscarContactos(dominiosNuevosParsed)}
+                disabled={dominiosNuevosParsed.length === 0 || enProceso}
+                className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+              >
+                Buscar en {dominiosNuevosParsed.length > 0 ? `${dominiosNuevosParsed.length} dominio${dominiosNuevosParsed.length !== 1 ? 's' : ''}` : 'nuevos dominios'}
+              </button>
+              <button
+                onClick={() => { setMostrarAnadir(false); setDominiosNuevos('') }}
+                className="text-sm text-gray-400 hover:text-gray-600 px-3 py-2 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
         )}
 
-        {/* Contacts table */}
-        {contactos.length > 0 && (
+        {/* Resumen */}
+        {tieneContactos && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              <span className="text-gray-900 font-semibold">{contactos.length}</span> contactos
+              {stats.sinResultados > 0 && <span className="ml-2 text-gray-400">· {stats.sinResultados} dominios sin resultados</span>}
+            </p>
+          </div>
+        )}
+
+        {/* Tabla */}
+        {tieneContactos && (
           <TablaContactos
             contactos={contactos}
             onExcluir={['listo', 'completado'].includes(fase) ? excluirContacto : undefined}
