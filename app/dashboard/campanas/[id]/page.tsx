@@ -73,7 +73,7 @@ export default function DetalleCampanaPage() {
 
     try {
       // Guardar dominios en BD antes de buscar
-      await guardarDominios([...new Set([...dominiosParsed, ...dominios])])
+      await guardarDominios(Array.from(new Set([...dominiosParsed, ...dominios])))
 
       const res = await fetch('/api/enriquecer-contactos', {
         method: 'POST',
