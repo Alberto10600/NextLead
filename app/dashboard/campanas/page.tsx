@@ -8,11 +8,11 @@ import type { Campana } from '@/types'
 import { formatearFecha } from '@/lib/utils'
 
 const estadoStyles: Record<string, { bg: string; text: string; label: string }> = {
-  borrador:   { bg: 'bg-slate-800/60',   text: 'text-gray-500',   label: 'Borrador' },
-  procesando: { bg: 'bg-blue-500/10',    text: 'text-blue-400',    label: 'Procesando' },
-  activa:     { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Activa' },
-  pausada:    { bg: 'bg-amber-500/10',   text: 'text-amber-400',   label: 'Pausada' },
-  completada: { bg: 'bg-slate-700/40',   text: 'text-gray-500',   label: 'Completada' },
+  borrador:   { bg: 'bg-gray-100',     text: 'text-gray-500',    label: 'Borrador' },
+  procesando: { bg: 'bg-blue-50',      text: 'text-blue-600',    label: 'Procesando' },
+  activa:     { bg: 'bg-emerald-50',   text: 'text-emerald-600', label: 'Activa' },
+  pausada:    { bg: 'bg-amber-50',     text: 'text-amber-600',   label: 'Pausada' },
+  completada: { bg: 'bg-gray-100',     text: 'text-gray-500',    label: 'Completada' },
 }
 
 export default function CampanasPage() {
@@ -126,12 +126,12 @@ export default function CampanasPage() {
                   return (
                     <tr
                       key={c.id}
-                      className="border-b border-gray-200 last:border-0 hover:bg-white/[0.025] transition-colors duration-100 group"
+                      className="border-b border-gray-200 last:border-0 hover:bg-gray-50 transition-colors duration-100 group"
                     >
                       <td className="px-5 py-3.5">
                         <Link
                           href={`/dashboard/campanas/${c.id}`}
-                          className="font-semibold text-gray-900 hover:text-blue-400 transition-colors duration-100"
+                          className="font-semibold text-gray-900 hover:text-orange-500 transition-colors duration-100"
                         >
                           {c.nombre}
                         </Link>
@@ -160,7 +160,7 @@ export default function CampanasPage() {
                           <button
                             onClick={() => eliminar(c.id, c.nombre)}
                             disabled={eliminando === c.id}
-                            className="px-2.5 py-1 text-xs text-red-500/80 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors duration-100 disabled:opacity-40"
+                            className="px-2.5 py-1 text-xs text-red-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors duration-100 disabled:opacity-40"
                             title="Eliminar campaña"
                           >
                             {eliminando === c.id ? '...' : 'Eliminar'}

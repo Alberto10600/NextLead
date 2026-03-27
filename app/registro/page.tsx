@@ -27,7 +27,7 @@ export default function RegistroPage() {
 
         <p className="text-center text-xs text-gray-400 mt-6">
           ¿Ya tienes cuenta?{' '}
-          <Link href="/login" className="text-orange-400 hover:text-orange-300 transition-colors">
+          <Link href="/login" className="text-orange-500 hover:text-orange-600 transition-colors">
             Inicia sesión
           </Link>
         </p>

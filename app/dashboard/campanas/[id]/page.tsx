@@ -139,16 +139,43 @@ export default function DetalleCampanaPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error generando emails')
 
-      setProgGeneracion({ hecho: data.generados, total: sinEmail.length })
       setMostrarGenerador(false)
-      // Reload contacts to get updated emails
       await cargarCampana()
-      setToast({ msg: `${data.generados} emails generados con IA`, tipo: 'success' })
+
+      const msg = data.errores?.length
+        ? `${data.generados}/${sinEmail.length} emails generados. ${data.errores.length} errores.`
+        : `${data.generados} emails generados con IA`
+      setToast({ msg, tipo: data.errores?.length ? 'info' : 'success' })
     } catch (e: unknown) {
       setToast({ msg: (e as Error).message, tipo: 'error' })
     } finally {
       setFase('listo')
       setProgGeneracion(null)
+    }
+  }
+
+  const enviarCampana = async () => {
+    const conEmail = contactos.filter((c) => c.email_generado && c.estado === 'pendiente')
+    if (conEmail.length === 0) {
+      setToast({ msg: 'No hay contactos pendientes con email generado', tipo: 'info' })
+      return
+    }
+    setFase('enviando')
+    try {
+      const res = await fetch('/api/enviar-campana', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campana_id: id, modo: 'test' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error enviando')
+
+      await cargarCampana()
+      setToast({ msg: `${data.enviados} emails marcados como enviados (modo test — sin envío real)`, tipo: 'success' })
+    } catch (e: unknown) {
+      setToast({ msg: (e as Error).message, tipo: 'error' })
+    } finally {
+      setFase('listo')
     }
   }
 
@@ -197,6 +224,15 @@ export default function DetalleCampanaPage() {
               <span>Buscando en Hunter...</span>
             </div>
           )}
+          {fase === 'enviando' && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <svg className="animate-spin w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              <span>Enviando (test)...</span>
+            </div>
+          )}
           {fase === 'generando' && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <svg className="animate-spin w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24">
@@ -229,6 +265,19 @@ export default function DetalleCampanaPage() {
                 <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
               </svg>
               Generar emails IA · {sinEmailGenerado}
+            </button>
+          )}
+
+          {/* Enviar campaña (test) */}
+          {tieneContactos && !enProceso && contactos.some((c) => c.email_generado && c.estado === 'pendiente') && (
+            <button
+              onClick={enviarCampana}
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border border-emerald-500 bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+              Enviar test · {contactos.filter((c) => c.email_generado && c.estado === 'pendiente').length}
             </button>
           )}
 

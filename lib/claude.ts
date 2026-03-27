@@ -1,34 +1,29 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import { sleep } from './utils'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 })
 
-export async function generarDominios(sector: string, pais: string): Promise<string[]> {
-  const prompt = `Devuelve un JSON con exactamente 10 dominios web reales de empresas en el sector: ${sector} en ${pais}.
-Deben ser empresas reales con web activa, de distintos tamaños.
-Sin texto adicional, sin markdown, solo JSON:
-{"dominios": ["empresa1.es", "empresa2.com", ...]}`
+/** Extrae JSON limpio de una respuesta que puede venir con ```json...``` */
+function extraerJSON(texto: string): string {
+  const match = texto.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (match) return match[1].trim()
+  // Buscar el primer { hasta el último }
+  const inicio = texto.indexOf('{')
+  const fin = texto.lastIndexOf('}')
+  if (inicio !== -1 && fin !== -1) return texto.slice(inicio, fin + 1)
+  return texto.trim()
+}
 
-  const intentar = async (): Promise<string[]> => {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 500,
-      messages: [{ role: 'user', content: prompt }],
-    })
-
-    const texto = message.content[0].type === 'text' ? message.content[0].text : ''
-    const parsed = JSON.parse(texto.trim())
-    if (!Array.isArray(parsed.dominios)) throw new Error('Formato inválido')
-    return parsed.dominios
-  }
-
+/** Lee el prompt de skills si existe, sino usa el default */
+function leerSkillEmail(): string | null {
   try {
-    return await intentar()
+    return readFileSync(join(process.cwd(), 'prompts', 'email-prospeccion.md'), 'utf-8')
   } catch {
-    await sleep(2000)
-    return await intentar()
+    return null
   }
 }
 
@@ -43,9 +38,19 @@ export async function generarEmailProspeccion(params: {
 }): Promise<{ asunto: string; cuerpo: string }> {
   const { nombre, apellido, cargo, empresa, sector, contextoWeb, descripcionAgencia } = params
 
+  const skill = leerSkillEmail()
   const contextoLinea = contextoWeb ? `- Web de su empresa: ${contextoWeb}` : ''
 
-  const userPrompt = `Redacta email de prospección B2B en español para:
+  const userPrompt = skill
+    ? skill
+        .replace('{{nombre}}', nombre || 'el/la responsable')
+        .replace('{{apellido}}', apellido || '')
+        .replace('{{cargo}}', cargo || 'responsable de la empresa')
+        .replace('{{empresa}}', empresa || 'la empresa')
+        .replace('{{sector}}', sector)
+        .replace('{{contexto_web}}', contextoLinea)
+        .replace('{{descripcion_agencia}}', descripcionAgencia)
+    : `Redacta email de prospección B2B en español para:
 - Nombre: ${nombre || 'el/la responsable'} ${apellido || ''}
 - Cargo: ${cargo || 'responsable de la empresa'}
 - Empresa: ${empresa || 'la empresa'}
@@ -67,28 +72,31 @@ Responde SOLO con este JSON:
 
   const intentar = async (): Promise<{ asunto: string; cuerpo: string }> => {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 400,
+      model: process.env.EMAIL_GENERATION_MODEL || 'claude-haiku-4-5-20251001',
+      max_tokens: 350,
       system: 'Eres un experto en ventas B2B y copywriting en España. Redactas emails de prospección que consiguen respuesta. Siempre respondes en JSON estricto sin markdown.',
       messages: [{ role: 'user', content: userPrompt }],
     })
 
     const texto = message.content[0].type === 'text' ? message.content[0].text : ''
-    const parsed = JSON.parse(texto.trim())
+    const limpio = extraerJSON(texto)
+    const parsed = JSON.parse(limpio)
     if (!parsed.asunto || !parsed.cuerpo) throw new Error('Formato inválido')
     return parsed
   }
 
-  try {
-    return await intentar()
-  } catch (e: unknown) {
-    const error = e as { status?: number }
-    if (error?.status === 429) {
-      await sleep(3000)
+  // Hasta 3 reintentos con backoff
+  for (let intento = 0; intento < 3; intento++) {
+    try {
       return await intentar()
+    } catch (e: unknown) {
+      const error = e as { status?: number; message?: string }
+      if (intento === 2) throw new Error(`Fallo tras 3 intentos: ${error.message || 'desconocido'}`)
+      const espera = error?.status === 429 ? 5000 : 1500
+      await sleep(espera)
     }
-    throw e
   }
+  throw new Error('No se pudo generar el email')
 }
 
 export async function generarEmailSeguimiento(params: {
@@ -117,5 +125,6 @@ Responde SOLO con JSON: {"asunto": "...", "cuerpo": "..."}`
   })
 
   const texto = message.content[0].type === 'text' ? message.content[0].text : ''
-  return JSON.parse(texto.trim())
+  const limpio = extraerJSON(texto)
+  return JSON.parse(limpio)
 }

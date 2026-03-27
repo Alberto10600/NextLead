@@ -70,7 +70,7 @@ export default async function DashboardPage() {
             </div>
             <Link
               href="/dashboard/campanas/nueva"
-              className="flex items-center gap-1.5 text-xs font-medium text-orange-400 hover:text-orange-300 bg-orange-400/10 hover:bg-orange-400/15 border border-orange-400/20 hover:border-orange-400/30 px-3 py-1.5 rounded-lg transition-all duration-150"
+              className="flex items-center gap-1.5 text-xs font-medium text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3 py-1.5 rounded-lg transition-all duration-150"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>

@@ -11,22 +11,22 @@ export default function Hero() {
 
       <div className="max-w-3xl mx-auto space-y-7">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-400/20 rounded-full px-4 py-1.5 text-xs text-orange-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+        <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-full px-4 py-1.5 text-xs text-orange-600">
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
           Prospección B2B · Powered by Claude AI
         </div>
 
         {/* Headline */}
         <h1 className="text-5xl md:text-6xl font-bold leading-tight tracking-tight">
-          <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+          <span className="text-gray-900">
             Encuentra tus próximos
           </span>
           <br />
-          <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
             clientes B2B
           </span>
           <br />
-          <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+          <span className="text-gray-900">
             en minutos
           </span>
         </h1>
@@ -50,7 +50,7 @@ export default function Hero() {
           </Link>
           <Link
             href="/precios"
-            className="inline-flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] border border-gray-200 text-gray-700 hover:text-gray-900 font-medium px-6 py-3 rounded-lg transition-all duration-150 text-sm"
+            className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 hover:text-gray-900 font-medium px-6 py-3 rounded-lg transition-all duration-150 text-sm"
           >
             Ver planes
           </Link>

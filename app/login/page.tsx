@@ -27,7 +27,7 @@ export default function LoginPage() {
 
         <p className="text-center text-xs text-gray-400 mt-6">
           ¿Sin cuenta?{' '}
-          <Link href="/registro" className="text-orange-400 hover:text-orange-300 transition-colors">
+          <Link href="/registro" className="text-orange-500 hover:text-orange-600 transition-colors">
             Regístrate gratis
           </Link>
         </p>

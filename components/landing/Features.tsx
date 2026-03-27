@@ -12,7 +12,7 @@ const features = [
     titulo: 'Emails personalizados',
     descripcion: 'Cada email se redacta analizando la web de la empresa con IA. Directo, cercano y con alta tasa de apertura y respuesta.',
     icon: (
-      <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
       </svg>
     ),
@@ -21,7 +21,7 @@ const features = [
     titulo: 'Seguimientos automáticos',
     descripcion: 'Si no abren en 3 días o no responden en 7, NextLead hace los follow-ups por ti — y los cancela al recibir respuesta.',
     icon: (
-      <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
       </svg>
     ),
@@ -34,7 +34,7 @@ export default function Features() {
       <div className="max-w-5xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-14 space-y-3">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-bold text-gray-900">
             Todo lo que necesitas para prospectar
           </h2>
           <p className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed">
@@ -46,9 +46,9 @@ export default function Features() {
           {features.map((f) => (
             <div
               key={f.titulo}
-              className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 hover:border-orange-400/20 hover:bg-gray-100 transition-all duration-300 group"
+              className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 hover:border-orange-300 hover:shadow-sm transition-all duration-300 group"
             >
-              <div className="bg-orange-500/10 rounded-lg p-2.5 w-fit group-hover:bg-orange-500/15 transition-colors duration-300">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5 w-fit group-hover:bg-orange-100 transition-colors duration-300">
                 {f.icon}
               </div>
               <div className="space-y-2">
