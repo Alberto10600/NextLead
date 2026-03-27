@@ -11,12 +11,12 @@ interface TablaContactosProps {
 }
 
 const estadoStyles: Record<Contacto['estado'], { bg: string; text: string }> = {
-  pendiente:  { bg: 'bg-slate-700/40',   text: 'text-gray-500' },
-  enviado:    { bg: 'bg-orange-400/10',  text: 'text-orange-400' },
-  abierto:    { bg: 'bg-amber-500/10',   text: 'text-amber-400' },
-  respondido: { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
-  rebotado:   { bg: 'bg-red-500/10',     text: 'text-red-400' },
-  error:      { bg: 'bg-red-500/10',     text: 'text-red-400' },
+  pendiente:  { bg: 'bg-gray-100',      text: 'text-gray-500' },
+  enviado:    { bg: 'bg-orange-50',     text: 'text-orange-600' },
+  abierto:    { bg: 'bg-amber-50',      text: 'text-amber-600' },
+  respondido: { bg: 'bg-emerald-50',    text: 'text-emerald-600' },
+  rebotado:   { bg: 'bg-red-50',        text: 'text-red-500' },
+  error:      { bg: 'bg-red-50',        text: 'text-red-500' },
 }
 
 const DECISION_MAKER_KEYWORDS = [
@@ -108,7 +108,7 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
                 onClick={() => cambiarTab(t)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
                   tab === t
-                    ? 'bg-orange-500/20 text-orange-300 border border-orange-400/30'
+                    ? 'bg-orange-50 text-orange-600 border border-orange-200'
                     : 'text-gray-400 hover:text-gray-700'
                 }`}
               >
@@ -204,14 +204,22 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {c.email_generado && (
-                        <button onClick={() => setContactoSeleccionado(c)} className="px-2.5 py-1 text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded transition-colors">
+                    <div className="flex items-center justify-end gap-1">
+                      {c.email_generado ? (
+                        <button
+                          onClick={() => setContactoSeleccionado(c)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-md transition-colors"
+                        >
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                          </svg>
                           Ver email
                         </button>
+                      ) : (
+                        <span className="px-2.5 py-1 text-xs text-gray-300">—</span>
                       )}
                       {onExcluir && (
-                        <button onClick={() => onExcluir(c.id)} className="px-2.5 py-1 text-xs text-red-500/70 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors">
+                        <button onClick={() => onExcluir(c.id)} className="opacity-0 group-hover:opacity-100 px-2 py-1 text-xs text-red-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all">
                           Excluir
                         </button>
                       )}
@@ -232,7 +240,7 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
             <button onClick={() => setPagina(0)} disabled={paginaActual === 0} className="px-2 py-1.5 text-xs text-gray-400 hover:text-gray-800 hover:bg-gray-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors">«</button>
             <button onClick={() => setPagina((p) => Math.max(0, p - 1))} disabled={paginaActual === 0} className="px-2.5 py-1.5 text-xs text-gray-400 hover:text-gray-800 hover:bg-gray-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors">‹ Anterior</button>
             {Array.from({ length: totalPaginas }, (_, i) => i).filter((i) => Math.abs(i - paginaActual) <= 2).map((i) => (
-              <button key={i} onClick={() => setPagina(i)} className={`w-8 h-7 text-xs rounded transition-colors ${i === paginaActual ? 'bg-orange-500/20 border border-orange-400/30 text-orange-300 font-medium' : 'text-gray-400 hover:text-gray-800 hover:bg-gray-50'}`}>{i + 1}</button>
+              <button key={i} onClick={() => setPagina(i)} className={`w-8 h-7 text-xs rounded transition-colors ${i === paginaActual ? 'bg-orange-50 border border-orange-200 text-orange-600 font-medium' : 'text-gray-400 hover:text-gray-800 hover:bg-gray-50'}`}>{i + 1}</button>
             ))}
             <button onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))} disabled={paginaActual >= totalPaginas - 1} className="px-2.5 py-1.5 text-xs text-gray-400 hover:text-gray-800 hover:bg-gray-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Siguiente ›</button>
             <button onClick={() => setPagina(totalPaginas - 1)} disabled={paginaActual >= totalPaginas - 1} className="px-2 py-1.5 text-xs text-gray-400 hover:text-gray-800 hover:bg-gray-50 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors">»</button>

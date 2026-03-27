@@ -5,10 +5,10 @@ interface BadgePlanProps {
 }
 
 const planColors: Record<Plan, string> = {
-  free:     'bg-slate-700 text-gray-700',
-  starter:  'bg-blue-900/50 text-blue-300',
-  pro:      'bg-purple-900/50 text-purple-300',
-  business: 'bg-amber-900/50 text-amber-300',
+  free:     'bg-gray-100 text-gray-500 border border-gray-200',
+  starter:  'bg-blue-50 text-blue-600 border border-blue-200',
+  pro:      'bg-orange-50 text-orange-600 border border-orange-200',
+  business: 'bg-amber-50 text-amber-600 border border-amber-200',
 }
 
 export default function BadgePlan({ plan }: BadgePlanProps) {

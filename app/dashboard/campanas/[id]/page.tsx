@@ -8,7 +8,7 @@ import TablaContactos from '@/components/dashboard/TablaContactos'
 import Toast from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
 
-type Fase = 'idle' | 'buscando' | 'listo' | 'enviando' | 'completado'
+type Fase = 'idle' | 'buscando' | 'listo' | 'generando' | 'enviando' | 'completado'
 
 const estadoBadge: Record<string, { bg: string; text: string; label: string }> = {
   borrador:   { bg: 'bg-gray-100',    text: 'text-gray-500',    label: 'Borrador' },
@@ -37,6 +37,10 @@ export default function DetalleCampanaPage() {
   const [dominiosTexto, setDominiosTexto] = useState('')
   const [mostrarAnadir, setMostrarAnadir] = useState(false)
   const [dominiosNuevos, setDominiosNuevos] = useState('')
+  const [mostrarGenerador, setMostrarGenerador] = useState(false)
+  const [descAgencia, setDescAgencia] = useState('')
+  const [sectorObjetivo, setSectorObjetivo] = useState('')
+  const [progGeneracion, setProgGeneracion] = useState<{ hecho: number; total: number } | null>(null)
 
   const cargarCampana = useCallback(async () => {
     const res = await fetch(`/api/campanas/${id}`)
@@ -113,6 +117,41 @@ export default function DetalleCampanaPage() {
     setContactos((prev) => prev.filter((c) => c.id !== contactoId))
   }
 
+  const generarEmails = async () => {
+    const sinEmail = contactos.filter((c) => !c.email_generado)
+    if (sinEmail.length === 0) {
+      setToast({ msg: 'Todos los contactos ya tienen email generado', tipo: 'info' })
+      return
+    }
+    setFase('generando')
+    setProgGeneracion({ hecho: 0, total: sinEmail.length })
+
+    try {
+      const res = await fetch('/api/generar-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contacto_ids: sinEmail.map((c) => c.id),
+          descripcion_agencia: descAgencia,
+          sector: sectorObjetivo,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error generando emails')
+
+      setProgGeneracion({ hecho: data.generados, total: sinEmail.length })
+      setMostrarGenerador(false)
+      // Reload contacts to get updated emails
+      await cargarCampana()
+      setToast({ msg: `${data.generados} emails generados con IA`, tipo: 'success' })
+    } catch (e: unknown) {
+      setToast({ msg: (e as Error).message, tipo: 'error' })
+    } finally {
+      setFase('listo')
+      setProgGeneracion(null)
+    }
+  }
+
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>
 
   if (!campana) {
@@ -127,8 +166,9 @@ export default function DetalleCampanaPage() {
   }
 
   const badge = estadoBadge[campana.estado] || estadoBadge.borrador
-  const enProceso = fase === 'buscando' || fase === 'enviando'
+  const enProceso = fase === 'buscando' || fase === 'enviando' || fase === 'generando'
   const tieneContactos = contactos.length > 0
+  const sinEmailGenerado = contactos.filter((c) => !c.email_generado).length
 
   return (
     <div className="min-h-full">
@@ -148,13 +188,22 @@ export default function DetalleCampanaPage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {enProceso && (
+          {fase === 'buscando' && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <svg className="animate-spin w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
               <span>Buscando en Hunter...</span>
+            </div>
+          )}
+          {fase === 'generando' && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <svg className="animate-spin w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              <span>{progGeneracion ? `Generando ${progGeneracion.hecho}/${progGeneracion.total}...` : 'Generando emails...'}</span>
             </div>
           )}
 
@@ -166,10 +215,27 @@ export default function DetalleCampanaPage() {
             Editar
           </button>
 
+          {/* Generar emails con IA */}
+          {tieneContactos && !enProceso && sinEmailGenerado > 0 && (
+            <button
+              onClick={() => { setMostrarGenerador((v) => !v); setMostrarAnadir(false) }}
+              className={`inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border transition-colors ${
+                mostrarGenerador
+                  ? 'bg-orange-50 text-orange-600 border-orange-200'
+                  : 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500'
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+              </svg>
+              Generar emails IA · {sinEmailGenerado}
+            </button>
+          )}
+
           {/* Añadir dominios (cuando ya hay contactos) */}
           {tieneContactos && !enProceso && (
             <button
-              onClick={() => setMostrarAnadir((v) => !v)}
+              onClick={() => { setMostrarAnadir((v) => !v); setMostrarGenerador(false) }}
               className={`inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border transition-colors ${
                 mostrarAnadir
                   ? 'bg-orange-50 text-orange-600 border-orange-200'
@@ -224,6 +290,55 @@ export default function DetalleCampanaPage() {
             {dominiosParsed.length > 0 && (
               <p className="text-xs text-gray-400 mt-2">{dominiosParsed.length} dominio{dominiosParsed.length !== 1 ? 's' : ''} detectado{dominiosParsed.length !== 1 ? 's' : ''}</p>
             )}
+          </div>
+        )}
+
+        {/* Panel generar emails con IA */}
+        {mostrarGenerador && tieneContactos && (
+          <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Generar emails con IA</p>
+                <p className="text-xs text-gray-400 mt-0.5">Claude redactará un email personalizado para cada uno de los {sinEmailGenerado} contactos sin email.</p>
+              </div>
+              <button onClick={() => setMostrarGenerador(false)} className="text-gray-300 hover:text-gray-500 transition-colors">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">Sector objetivo</label>
+                <input
+                  value={sectorObjetivo}
+                  onChange={(e) => setSectorObjetivo(e.target.value)}
+                  placeholder="ej. Ecommerce, SaaS, Consultoría..."
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">¿Qué ofrece tu agencia?</label>
+                <textarea
+                  value={descAgencia}
+                  onChange={(e) => setDescAgencia(e.target.value)}
+                  placeholder="ej. Somos una agencia de marketing digital especializada en SEO y publicidad de pago para ecommerce..."
+                  rows={3}
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 resize-none transition-all"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={generarEmails}
+                  disabled={!descAgencia.trim() || !sectorObjetivo.trim()}
+                  className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                  </svg>
+                  Generar {sinEmailGenerado} emails
+                </button>
+                <p className="text-xs text-gray-400">~{Math.ceil(sinEmailGenerado * 0.5 / 60)} min aprox.</p>
+              </div>
+            </div>
           </div>
         )}
 
