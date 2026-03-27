@@ -44,7 +44,7 @@ export default function FormularioLogin() {
           value={form.email}
           onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
           required
-          className="bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-150 focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40"
+          className="bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-150 focus:ring-1 focus:ring-orange-400/40 focus:border-orange-400/40"
         />
       </div>
 
@@ -58,7 +58,7 @@ export default function FormularioLogin() {
           value={form.password}
           onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
           required
-          className="bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-150 focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40"
+          className="bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-150 focus:ring-1 focus:ring-orange-400/40 focus:border-orange-400/40"
         />
       </div>
 
@@ -74,7 +74,7 @@ export default function FormularioLogin() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-4 py-2.5 rounded-lg transition-all duration-150 text-sm shadow-lg shadow-indigo-600/20 mt-1"
+        className="w-full inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-4 py-2.5 rounded-lg transition-all duration-150 text-sm shadow-lg shadow-orange-500/20 mt-1"
       >
         {loading ? (
           <>
@@ -91,7 +91,7 @@ export default function FormularioLogin() {
 
       <p className="text-sm text-center text-gray-400 pt-1">
         ¿Sin cuenta?{' '}
-        <Link href="/registro" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+        <Link href="/registro" className="text-orange-400 hover:text-orange-300 transition-colors">
           Regístrate gratis
         </Link>
       </p>

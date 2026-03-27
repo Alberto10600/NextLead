@@ -70,7 +70,7 @@ export default async function DashboardPage() {
             </div>
             <Link
               href="/dashboard/campanas/nueva"
-              className="flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20 hover:border-indigo-500/30 px-3 py-1.5 rounded-lg transition-all duration-150"
+              className="flex items-center gap-1.5 text-xs font-medium text-orange-400 hover:text-orange-300 bg-orange-400/10 hover:bg-orange-400/15 border border-orange-400/20 hover:border-orange-400/30 px-3 py-1.5 rounded-lg transition-all duration-150"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -81,8 +81,8 @@ export default async function DashboardPage() {
 
           {listaCampanas.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-xl p-14 text-center">
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-4">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-400">
+              <div className="w-12 h-12 rounded-xl bg-orange-400/10 border border-orange-400/20 flex items-center justify-center mx-auto mb-4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-orange-400">
                   <path d="M3 11l19-9-9 19-2-8-8-2z"/>
                 </svg>
               </div>
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
               <p className="text-xs text-gray-400 mb-5">Crea tu primera campaña para empezar a enviar emails</p>
               <Link
                 href="/dashboard/campanas/nueva"
-                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-gray-900 text-xs font-medium px-4 py-2 rounded-lg transition-colors duration-150 ring-1 ring-indigo-500/40"
+                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-400 text-gray-900 text-xs font-medium px-4 py-2 rounded-lg transition-colors duration-150 ring-1 ring-orange-400/40"
               >
                 Crear primera campaña
               </Link>
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
                       <td className="px-5 py-3.5">
                         <Link
                           href={`/dashboard/campanas/${c.id}`}
-                          className="text-gray-800 hover:text-indigo-400 transition-colors duration-150 font-medium tracking-tight text-sm"
+                          className="text-gray-800 hover:text-orange-400 transition-colors duration-150 font-medium tracking-tight text-sm"
                         >
                           {c.nombre}
                         </Link>

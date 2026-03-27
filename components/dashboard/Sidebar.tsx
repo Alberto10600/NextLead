@@ -64,13 +64,13 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-200">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-400/20">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
             </svg>
           </div>
           <span className="text-[15px] font-bold tracking-tight text-gray-900">
-            Next<span className="text-indigo-600">Lead</span>
+            Next<span className="text-orange-500">Lead</span>
           </span>
         </Link>
       </div>
@@ -94,15 +94,15 @@ export default function Sidebar() {
               className={`
                 group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150
                 ${isActive
-                  ? 'bg-indigo-50 text-indigo-700 font-medium'
+                  ? 'bg-orange-50 text-orange-600 font-medium'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                 }
               `}
             >
               {isActive && (
-                <span className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-indigo-600 rounded-l-full" />
+                <span className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-orange-500 rounded-l-full" />
               )}
-              <span className={`flex-shrink-0 transition-colors duration-150 ${isActive ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
+              <span className={`flex-shrink-0 transition-colors duration-150 ${isActive ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600'}`}>
                 {item.icon}
               </span>
               <span className="tracking-tight">{item.label}</span>

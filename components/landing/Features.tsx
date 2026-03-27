@@ -3,7 +3,7 @@ const features = [
     titulo: 'Encuentra contactos',
     descripcion: 'Claude AI identifica empresas reales de tu sector y extrae los emails de los responsables adecuados con alta precisión.',
     icon: (
-      <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
       </svg>
     ),
@@ -46,9 +46,9 @@ export default function Features() {
           {features.map((f) => (
             <div
               key={f.titulo}
-              className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 hover:border-indigo-500/20 hover:bg-gray-100 transition-all duration-300 group"
+              className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 hover:border-orange-400/20 hover:bg-gray-100 transition-all duration-300 group"
             >
-              <div className="bg-indigo-600/10 rounded-lg p-2.5 w-fit group-hover:bg-indigo-600/15 transition-colors duration-300">
+              <div className="bg-orange-500/10 rounded-lg p-2.5 w-fit group-hover:bg-orange-500/15 transition-colors duration-300">
                 {f.icon}
               </div>
               <div className="space-y-2">

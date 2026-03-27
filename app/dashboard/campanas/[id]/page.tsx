@@ -231,7 +231,7 @@ export default function DetalleCampanaPage() {
                 placeholder={'stripe.com\nshopify.com\nvercel.com'}
                 rows={8}
                 disabled={enProceso}
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 placeholder:text-gray-600 font-mono outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40 resize-none transition-all duration-150 disabled:opacity-50"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 placeholder:text-gray-600 font-mono outline-none focus:ring-1 focus:ring-orange-400/40 focus:border-orange-400/40 resize-none transition-all duration-150 disabled:opacity-50"
               />
               {dominiosParsed.length > 0 && (
                 <p className="text-xs text-gray-400 mt-2">
@@ -263,7 +263,7 @@ export default function DetalleCampanaPage() {
                       <p className="text-xs text-gray-400 mb-1.5">Seniority</p>
                       <div className="flex flex-wrap gap-1">
                         {filtros.seniority.map((s) => (
-                          <span key={s} className="bg-violet-600/15 border border-violet-500/20 text-violet-400 text-xs px-2 py-0.5 rounded-full">
+                          <span key={s} className="bg-orange-500/15 border border-orange-400/20 text-violet-400 text-xs px-2 py-0.5 rounded-full">
                             {SENIORITY_HUNTER[s] || s}
                           </span>
                         ))}

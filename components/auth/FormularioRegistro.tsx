@@ -54,7 +54,7 @@ export default function FormularioRegistro() {
     router.refresh()
   }
 
-  const inputClass = "bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-150 focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40 w-full"
+  const inputClass = "bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-150 focus:ring-1 focus:ring-orange-400/40 focus:border-orange-400/40 w-full"
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -115,7 +115,7 @@ export default function FormularioRegistro() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-4 py-2.5 rounded-lg transition-all duration-150 text-sm shadow-lg shadow-indigo-600/20 mt-1"
+        className="w-full inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-4 py-2.5 rounded-lg transition-all duration-150 text-sm shadow-lg shadow-orange-500/20 mt-1"
       >
         {loading ? (
           <>
@@ -137,7 +137,7 @@ export default function FormularioRegistro() {
 
       <p className="text-sm text-center text-gray-400">
         ¿Ya tienes cuenta?{' '}
-        <Link href="/login" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+        <Link href="/login" className="text-orange-400 hover:text-orange-300 transition-colors">
           Inicia sesión
         </Link>
       </p>

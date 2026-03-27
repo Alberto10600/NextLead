@@ -18,7 +18,7 @@ export default function Header({ perfil, titulo }: HeaderProps) {
       {nombre && (
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-gray-200 hover:bg-gray-100 transition-colors duration-150 cursor-default">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-[11px] font-bold text-gray-900 shadow-sm">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center text-[11px] font-bold text-gray-900 shadow-sm">
               {inicial}
             </div>
             <span className="text-sm text-gray-500 tracking-tight">{nombre}</span>
