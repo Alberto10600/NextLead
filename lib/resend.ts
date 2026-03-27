@@ -1,8 +1,8 @@
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
-const FROM = process.env.RESEND_FROM_EMAIL || 'noreply@nextlead.es'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://nextlead.es'
+const FROM = process.env.RESEND_FROM_EMAIL || 'noreply@arrivo.es'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://arrivo.es'
 
 export interface EnvioEmail {
   to: string

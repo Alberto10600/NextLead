@@ -33,7 +33,7 @@ export default function Hero() {
 
         {/* Subheadline */}
         <p className="text-lg text-gray-500 max-w-xl mx-auto leading-relaxed">
-          NextLead descubre contactos cualificados en tu sector, genera emails hiperpersonalizados con IA
+          Arrivo descubre contactos cualificados en tu sector, genera emails hiperpersonalizados con IA
           y gestiona seguimientos automáticos — para que tu pipeline nunca se detenga.
         </p>
 

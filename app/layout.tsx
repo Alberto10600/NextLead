@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'NextLead — Prospección B2B para Agencias',
+  title: 'Arrivo — Prospección B2B para Agencias',
   description: 'Encuentra clientes potenciales automáticamente con IA. Emails personalizados y seguimientos automáticos.',
 }
 

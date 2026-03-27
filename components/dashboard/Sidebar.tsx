@@ -94,7 +94,7 @@ export default function Sidebar() {
             </svg>
           </div>
           <span className="text-[15px] font-bold tracking-tight text-gray-900">
-            Next<span className="text-orange-500">Lead</span>
+            Arr<span className="text-orange-500">ivo</span>
           </span>
         </Link>
       </div>

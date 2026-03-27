@@ -93,8 +93,8 @@ export async function POST(request: Request) {
         if (perfil?.email) {
           await enviarEmail({
             to: perfil.email,
-            asunto: 'Problema con tu pago en NextLead',
-            cuerpo: `Hola,\n\nHubo un problema al procesar tu pago en NextLead. Por favor, actualiza tu método de pago para continuar usando el servicio.\n\nEntra en nextlead.es/precios para gestionar tu suscripción.\n\nEl equipo de NextLead`,
+            asunto: 'Problema con tu pago en Arrivo',
+            cuerpo: `Hola,\n\nHubo un problema al procesar tu pago en Arrivo. Por favor, actualiza tu método de pago para continuar usando el servicio.\n\nEntra en arrivo.es/precios para gestionar tu suscripción.\n\nEl equipo de Arrivo`,
           })
         }
         break

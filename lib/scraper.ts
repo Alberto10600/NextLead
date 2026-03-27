@@ -8,7 +8,7 @@ export async function scrapearWeb(dominio: string): Promise<string | null> {
     const res = await fetch(`https://${dominio}`, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; NextLeadBot/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; ArrivoBot/1.0)',
       },
     })
 
