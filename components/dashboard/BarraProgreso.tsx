@@ -11,7 +11,7 @@ interface BarraProgresoProps {
 
 export default function BarraProgreso({ fases, progreso }: BarraProgresoProps) {
   return (
-    <div className="bg-[#1e293b] border border-[#334155] rounded-lg p-6">
+    <div className="bg-[#0D1321] border border-white/[0.06] rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         {fases.map((fase, i) => (
           <div key={i} className="flex items-center flex-1">

@@ -55,7 +55,7 @@ export default function SeguimientosPage() {
 
   return (
     <div>
-      <div className="h-14 border-b border-[#334155] bg-[#1e293b] px-6 flex items-center justify-between">
+      <div className="h-14 border-b border-white/[0.06] bg-[#0D1321] px-6 flex items-center justify-between">
         <div>
           <h1 className="text-base font-semibold text-slate-200">Seguimientos</h1>
         </div>
@@ -73,14 +73,14 @@ export default function SeguimientosPage() {
         {loading ? (
           <div className="text-center py-12 text-slate-500">Cargando...</div>
         ) : seguimientos.length === 0 ? (
-          <div className="bg-[#1e293b] border border-[#334155] rounded-lg p-12 text-center text-slate-400">
+          <div className="bg-[#0D1321] border border-white/[0.06] rounded-lg p-12 text-center text-slate-400">
             No hay seguimientos programados. Se crean automáticamente al enviar una campaña.
           </div>
         ) : (
-          <div className="bg-[#1e293b] border border-[#334155] rounded-lg overflow-hidden">
+          <div className="bg-[#0D1321] border border-white/[0.06] rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#334155]">
+                <tr className="border-b border-white/[0.06]">
                   <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Contacto</th>
                   <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Empresa</th>
                   <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">#</th>
@@ -91,7 +91,7 @@ export default function SeguimientosPage() {
               </thead>
               <tbody>
                 {seguimientos.map((s) => (
-                  <tr key={s.id} className="border-b border-[#334155] hover:bg-[#334155]/30 transition-colors">
+                  <tr key={s.id} className="border-b border-white/[0.06] hover:bg-[#334155]/30 transition-colors">
                     <td className="px-4 py-3 text-slate-300">
                       {s.contactos
                         ? `${s.contactos.nombre || ''} ${s.contactos.apellido || ''}`.trim() || s.contactos.email

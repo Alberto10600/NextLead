@@ -27,7 +27,7 @@ export default async function ContactosPage() {
         {contactos && contactos.length > 0 ? (
           <TablaContactos contactos={contactos as Contacto[]} />
         ) : (
-          <div className="bg-[#1e293b] border border-[#334155] rounded-lg p-12 text-center text-slate-400">
+          <div className="bg-[#0D1321] border border-white/[0.06] rounded-lg p-12 text-center text-slate-400">
             Aún no tienes contactos. Crea una campaña para empezar.
           </div>
         )}

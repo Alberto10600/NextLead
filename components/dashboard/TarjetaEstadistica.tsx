@@ -7,7 +7,7 @@ interface TarjetaEstadisticaProps {
 
 export default function TarjetaEstadistica({ titulo, valor, subtitulo, icono }: TarjetaEstadisticaProps) {
   return (
-    <div className="group relative bg-[#111827] border border-white/5 rounded-xl p-5 overflow-hidden transition-all duration-200 hover:border-white/10 hover:bg-[#141d2e]">
+    <div className="group relative bg-[#0D1321] border border-white/5 rounded-xl p-5 overflow-hidden transition-all duration-200 hover:border-white/10 hover:bg-[#141d2e]">
       {/* Subtle gradient top accent */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

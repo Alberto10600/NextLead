@@ -17,7 +17,7 @@ const estadoBadge: Record<Contacto['estado'], 'default' | 'success' | 'warning' 
 
 export default function TarjetaContacto({ contacto }: TarjetaContactoProps) {
   return (
-    <div className="bg-[#1e293b] border border-[#334155] rounded-lg p-4 space-y-2">
+    <div className="bg-[#0D1321] border border-white/[0.06] rounded-lg p-4 space-y-2">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-slate-200">

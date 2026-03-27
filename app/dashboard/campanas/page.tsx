@@ -48,7 +48,7 @@ export default function CampanasPage() {
   return (
     <div className="min-h-full">
       {/* Page header */}
-      <div className="border-b border-white/5 bg-[#111827] px-6 py-4 flex items-center justify-between">
+      <div className="border-b border-white/5 bg-[#0D1321] px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-base font-semibold text-white tracking-tight">Campañas</h1>
           {!loading && campanas.length > 0 && (
@@ -98,7 +98,7 @@ export default function CampanasPage() {
           </div>
         ) : (
           /* Campaigns table */
-          <div className="bg-[#111827] border border-white/5 rounded-lg overflow-hidden">
+          <div className="bg-[#0D1321] border border-white/5 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">

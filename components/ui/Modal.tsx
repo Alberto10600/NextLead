@@ -26,9 +26,9 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-2xl bg-[#1e293b] border border-[#334155] rounded-lg shadow-xl">
+      <div className="relative z-10 w-full max-w-2xl bg-[#0D1321] border border-white/[0.06] rounded-lg shadow-xl">
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#334155]">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
             <h2 className="text-base font-semibold text-slate-200">{title}</h2>
             <button
               onClick={onClose}

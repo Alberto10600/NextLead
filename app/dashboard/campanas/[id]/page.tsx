@@ -143,7 +143,7 @@ export default function DetalleCampanaPage() {
   return (
     <div className="min-h-full">
       {/* Top bar */}
-      <div className="border-b border-white/5 bg-[#111827] px-6 py-4 flex items-center justify-between gap-4">
+      <div className="border-b border-white/5 bg-[#0D1321] px-6 py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 min-w-0">
           <Link href="/dashboard/campanas" className="text-slate-500 hover:text-slate-300 text-sm transition-colors shrink-0">
             Campañas
@@ -193,23 +193,23 @@ export default function DetalleCampanaPage() {
       <div className="p-6 space-y-6">
         {/* Metrics row */}
         <div className="grid grid-cols-4 gap-3">
-          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
+          <div className="bg-[#0D1321] border border-white/5 rounded-lg px-4 py-3">
             <p className="text-xs text-slate-500 mb-1">Sector</p>
             <p className="text-sm font-medium text-slate-200 truncate">{campana.sector || '—'}</p>
           </div>
-          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
+          <div className="bg-[#0D1321] border border-white/5 rounded-lg px-4 py-3">
             <p className="text-xs text-slate-500 mb-1">País</p>
             <p className="text-sm font-medium text-slate-200">
               {PAISES_HUNTER.find((p) => p.value === campana.pais)?.label || campana.pais || '—'}
             </p>
           </div>
-          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
+          <div className="bg-[#0D1321] border border-white/5 rounded-lg px-4 py-3">
             <p className="text-xs text-slate-500 mb-1">Dominios</p>
             <p className="text-sm font-medium text-slate-200 tabular-nums">
               {dominiosParsed.length > 0 ? dominiosParsed.length : '—'}
             </p>
           </div>
-          <div className="bg-[#111827] border border-white/5 rounded-lg px-4 py-3">
+          <div className="bg-[#0D1321] border border-white/5 rounded-lg px-4 py-3">
             <p className="text-xs text-slate-500 mb-1">Contactos</p>
             <p className="text-sm font-medium text-slate-200 tabular-nums">{contactos.length}</p>
           </div>
@@ -218,7 +218,7 @@ export default function DetalleCampanaPage() {
         {/* Domain input + filter summary */}
         {(fase === 'idle' || fase === 'buscando') && contactos.length === 0 && (
           <div className="grid grid-cols-3 gap-6">
-            <div className="col-span-2 bg-[#111827] border border-white/5 rounded-lg p-5">
+            <div className="col-span-2 bg-[#0D1321] border border-white/5 rounded-lg p-5">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                 Dominios objetivo
               </p>
@@ -231,7 +231,7 @@ export default function DetalleCampanaPage() {
                 placeholder={'stripe.com\nshopify.com\nvercel.com'}
                 rows={8}
                 disabled={enProceso}
-                className="w-full bg-[#0a0f1e] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-slate-300 placeholder:text-slate-700 font-mono outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/40 resize-none transition-all duration-150 disabled:opacity-50"
+                className="w-full bg-[#070B14] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-slate-300 placeholder:text-slate-700 font-mono outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40 resize-none transition-all duration-150 disabled:opacity-50"
               />
               {dominiosParsed.length > 0 && (
                 <p className="text-xs text-slate-600 mt-2">
@@ -241,7 +241,7 @@ export default function DetalleCampanaPage() {
             </div>
 
             {filtros && (
-              <div className="bg-[#111827] border border-white/5 rounded-lg p-5">
+              <div className="bg-[#0D1321] border border-white/5 rounded-lg p-5">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
                   Filtros de contacto
                 </p>

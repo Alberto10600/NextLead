@@ -18,8 +18,8 @@ export default async function PreciosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a]">
-      <header className="border-b border-[#334155] px-6 py-4">
+    <div className="min-h-screen bg-[#070B14]">
+      <header className="border-b border-white/[0.06] px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="text-xl font-bold">
             <span className="text-blue-500">Next</span>

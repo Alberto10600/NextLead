@@ -7,10 +7,10 @@ import type { Plan } from '@/types'
 import Button from '@/components/ui/Button'
 
 const PLANES: { plan: Plan; nombre: string; color: string; destacado?: boolean }[] = [
-  { plan: 'free',     nombre: 'Free',     color: 'border-[#334155]' },
-  { plan: 'starter',  nombre: 'Starter',  color: 'border-[#334155]' },
+  { plan: 'free',     nombre: 'Free',     color: 'border-white/[0.06]' },
+  { plan: 'starter',  nombre: 'Starter',  color: 'border-white/[0.06]' },
   { plan: 'pro',      nombre: 'Pro',      color: 'border-blue-500', destacado: true },
-  { plan: 'business', nombre: 'Business', color: 'border-[#334155]' },
+  { plan: 'business', nombre: 'Business', color: 'border-white/[0.06]' },
 ]
 
 interface PreciosProps {
@@ -61,7 +61,7 @@ export default function Precios({ planActual }: PreciosProps) {
               <div
                 key={plan}
                 className={`
-                  relative bg-[#1e293b] border-2 rounded-lg p-6 flex flex-col gap-4
+                  relative bg-[#0D1321] border-2 rounded-lg p-6 flex flex-col gap-4
                   ${color}
                   ${destacado ? 'shadow-lg shadow-blue-500/10' : ''}
                 `}
