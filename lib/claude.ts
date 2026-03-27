@@ -174,7 +174,7 @@ export async function generarEmailSeguimiento(params: {
   const { nombre, empresa, emailAnterior, numeroSeguimiento, descripcionAgencia } = params
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: process.env.EMAIL_GENERATION_MODEL || 'claude-haiku-4-5-20251001',
     max_tokens: 300,
     system: 'Eres un experto en ventas B2B. Escribes follow-ups breves y directos. Responde en JSON estricto sin markdown.',
     messages: [{
