@@ -138,24 +138,24 @@ async function fetchPagina(
  * Detecta el límite real del plan (10 en free, 100 en paid) y pagina con él.
  */
 export async function buscarTodosLosContactos(dominio: string): Promise<HunterContacto[]> {
-  // Primera llamada: detecta el límite efectivo del plan
   const primera = await fetchPagina(dominio, 0)
   const todos = [...primera.emails]
 
-  if (primera.total <= primera.emails.length) return todos
+  // El límite efectivo = cuántos trajo la primera página (10 en free, 100 en paid)
+  // No usamos meta.results porque el plan free lo reporta como 10 aunque haya más
+  const limite = primera.emails.length || PAGE_SIZE
+  let offset = limite
+  let ultimaPaginaLlena = primera.emails.length === limite
 
-  // El límite real es cuántos trajo la primera página
-  const limiteEfectivo = primera.emails.length || PAGE_SIZE
-  let offset = limiteEfectivo
-
-  while (offset < primera.total) {
+  while (ultimaPaginaLlena) {
     await sleep(300)
-    const pagina = await fetchPagina(dominio, offset, limiteEfectivo)
+    const pagina = await fetchPagina(dominio, offset, limite)
     if (pagina.emails.length === 0) break
     todos.push(...pagina.emails)
-    offset += limiteEfectivo
+    offset += limite
+    ultimaPaginaLlena = pagina.emails.length === limite
   }
 
-  console.log(`[Hunter] ${dominio} → ${todos.length} / ${primera.total} contactos totales`)
+  console.log(`[Hunter] ${dominio} → ${todos.length} contactos`)
   return todos
 }
