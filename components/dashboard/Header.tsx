@@ -10,18 +10,18 @@ export default function Header({ perfil, titulo }: HeaderProps) {
   const inicial = nombre ? nombre[0].toUpperCase() : ''
 
   return (
-    <header className="h-14 border-b border-white/5 bg-[#0a0f1e]/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-10">
+    <header className="h-14 border-b border-white/[0.06] bg-[#070B14]/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-10">
       <div className="flex items-center gap-3">
-        <h1 className="text-sm font-semibold tracking-tight text-white">{titulo}</h1>
+        <h1 className="text-sm font-semibold tracking-tight text-slate-100">{titulo}</h1>
       </div>
 
       {nombre && (
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/8 hover:bg-white/8 transition-colors duration-150 cursor-default">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[11px] font-bold text-white shadow-sm">
+          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] transition-colors duration-150 cursor-default">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-[11px] font-bold text-white shadow-sm">
               {inicial}
             </div>
-            <span className="text-sm text-slate-300 tracking-tight">{nombre}</span>
+            <span className="text-sm text-slate-400 tracking-tight">{nombre}</span>
           </div>
         </div>
       )}

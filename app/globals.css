@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary:    #0f172a;
-  --bg-surface:    #1e293b;
-  --bg-hover:      #334155;
-  --border:        #334155;
-  --accent:        #3b82f6;
-  --accent-hover:  #2563eb;
+  --bg-primary:    #070B14;
+  --bg-surface:    #0D1321;
+  --bg-hover:      #131C2E;
+  --border:        rgba(255,255,255,0.06);
+  --accent:        #6366f1;
+  --accent-hover:  #818cf8;
   --text-primary:  #f1f5f9;
   --text-muted:    #94a3b8;
   --success:       #22c55e;
@@ -21,15 +21,15 @@
 }
 
 body {
-  background-color: var(--bg-primary);
+  background-color: #070B14;
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-primary); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar-track { background: #070B14; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
 
 @keyframes slide-in-from-bottom-4 {
   from { transform: translateY(16px); opacity: 0; }

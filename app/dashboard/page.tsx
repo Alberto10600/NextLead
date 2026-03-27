@@ -65,12 +65,12 @@ export default async function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-semibold tracking-tight text-white">Últimas campañas</h2>
+              <h2 className="text-sm font-semibold tracking-tight text-slate-100">Últimas campañas</h2>
               <p className="text-xs text-slate-600 mt-0.5">Tus 5 campañas más recientes</p>
             </div>
             <Link
               href="/dashboard/campanas/nueva"
-              className="flex items-center gap-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/15 border border-blue-500/20 hover:border-blue-500/30 px-3 py-1.5 rounded-lg transition-all duration-150"
+              className="flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20 hover:border-indigo-500/30 px-3 py-1.5 rounded-lg transition-all duration-150"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -80,26 +80,26 @@ export default async function DashboardPage() {
           </div>
 
           {listaCampanas.length === 0 ? (
-            <div className="bg-[#111827] border border-white/5 rounded-xl p-14 text-center">
-              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center mx-auto mb-4">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
-                  <path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/>
+            <div className="bg-[#0D1321] border border-white/[0.06] rounded-xl p-14 text-center">
+              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-400">
+                  <path d="M3 11l19-9-9 19-2-8-8-2z"/>
                 </svg>
               </div>
               <p className="text-sm font-medium text-slate-400 mb-1">Aún no tienes campañas</p>
               <p className="text-xs text-slate-600 mb-5">Crea tu primera campaña para empezar a enviar emails</p>
               <Link
                 href="/dashboard/campanas/nueva"
-                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors duration-150"
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors duration-150 ring-1 ring-indigo-500/40"
               >
                 Crear primera campaña
               </Link>
             </div>
           ) : (
-            <div className="bg-[#111827] border border-white/5 rounded-xl overflow-hidden">
+            <div className="bg-[#0D1321] border border-white/[0.06] rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/5">
+                  <tr className="border-b border-white/[0.06]">
                     <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Nombre</th>
                     <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Sector</th>
                     <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Estado</th>
@@ -111,12 +111,12 @@ export default async function DashboardPage() {
                   {listaCampanas.map((c, i) => (
                     <tr
                       key={c.id}
-                      className={`group transition-colors duration-100 hover:bg-white/[0.03] ${i < listaCampanas.length - 1 ? 'border-b border-white/5' : ''}`}
+                      className={`group transition-colors duration-100 hover:bg-white/[0.03] ${i < listaCampanas.length - 1 ? 'border-b border-white/[0.06]' : ''}`}
                     >
                       <td className="px-5 py-3.5">
                         <Link
                           href={`/dashboard/campanas/${c.id}`}
-                          className="text-slate-200 hover:text-blue-400 transition-colors duration-150 font-medium tracking-tight text-sm"
+                          className="text-slate-200 hover:text-indigo-400 transition-colors duration-150 font-medium tracking-tight text-sm"
                         >
                           {c.nombre}
                         </Link>
