@@ -101,7 +101,12 @@ async function fetchPagina(
       return { emails: [], total: 0 }
     }
 
-    const data = await res.json()
+    const text = await res.text()
+    console.log(`[Hunter] domain-search ${dominio} offset=${offset} → raw:`, text.slice(0, 1000))
+
+    let data: { data?: { organization?: string; emails?: HunterEmailRaw[] }; meta?: { results?: number } }
+    try { data = JSON.parse(text) } catch { return { emails: [], total: 0 } }
+
     const empresa: string = data.data?.organization || dominio
     const total: number = data.meta?.results ?? data.data?.emails?.length ?? 0
     const emails: HunterContacto[] = (data.data?.emails || []).map((p: HunterEmailRaw) => ({
@@ -113,7 +118,7 @@ async function fetchPagina(
       empresa,
       dominio,
     }))
-    console.log(`[Hunter] domain-search ${dominio} offset=${offset} → ${emails.length} emails (total: ${total})`)
+    console.log(`[Hunter] parsed → ${emails.length} emails, total: ${total}`)
     return { emails, total }
   }
   return { emails: [], total: 0 }
