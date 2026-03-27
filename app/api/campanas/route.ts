@@ -21,6 +21,8 @@ export async function POST(request: Request) {
     .insert({
       user_id: user.id,
       nombre: nombre.trim(),
+      sector: '',
+      pais: '',
       estado: 'borrador',
     })
     .select()
