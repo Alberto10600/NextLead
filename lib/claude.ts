@@ -27,6 +27,58 @@ function leerSkillEmail(): string | null {
   }
 }
 
+export async function generarDominiosPorSector(sector: string, pais: string, cantidad: number = 15): Promise<string[]> {
+  const prompt = `Lista exactamente ${cantidad} dominios web REALES de empresas del sector "${sector}" en ${pais}.
+Deben ser empresas reales, activas, con web funcional, de distintos tamaños (desde PYME a grande).
+Solo el dominio raíz (ej: empresa.es, empresa.com). Sin www, sin https.
+
+Responde SOLO con este JSON:
+{"dominios": ["empresa1.es", "empresa2.com", ...]}`
+
+  for (let intento = 0; intento < 3; intento++) {
+    try {
+      const message = await anthropic.messages.create({
+        model: process.env.EMAIL_GENERATION_MODEL || 'claude-haiku-4-5-20251001',
+        max_tokens: 500,
+        system: 'Eres un experto en el mercado empresarial español y latinoamericano. Solo devuelves JSON estricto sin markdown.',
+        messages: [{ role: 'user', content: prompt }],
+      })
+      const texto = message.content[0].type === 'text' ? message.content[0].text : ''
+      const limpio = extraerJSON(texto)
+      const parsed = JSON.parse(limpio)
+      if (!Array.isArray(parsed.dominios)) throw new Error('Formato inválido')
+      return parsed.dominios.map((d: string) => d.replace(/^www\./, '').toLowerCase())
+    } catch (e: unknown) {
+      if (intento === 2) throw new Error(`Error generando dominios: ${(e as Error).message}`)
+      await sleep(1500)
+    }
+  }
+  throw new Error('No se pudieron generar dominios')
+}
+
+export async function analizarEmpresa(dominio: string, contextoWeb: string): Promise<string> {
+  const message = await anthropic.messages.create({
+    model: process.env.EMAIL_GENERATION_MODEL || 'claude-haiku-4-5-20251001',
+    max_tokens: 300,
+    system: 'Eres un analista de empresas B2B. Respondes en español, de forma concisa y útil para un comercial.',
+    messages: [{
+      role: 'user',
+      content: `Analiza esta empresa (dominio: ${dominio}) a partir de su web:
+
+${contextoWeb}
+
+Devuelve un análisis breve (máximo 100 palabras) con:
+1. Qué hace la empresa (1 frase)
+2. Tamaño aproximado (PYME/mediana/grande)
+3. Punto de dolor probable para un comercial que vende servicios de marketing
+
+Responde SOLO con JSON: {"actividad": "...", "tamano": "...", "dolor": "...", "resumen": "..."}`
+    }],
+  })
+  const texto = message.content[0].type === 'text' ? message.content[0].text : ''
+  return extraerJSON(texto)
+}
+
 export async function generarEmailProspeccion(params: {
   nombre?: string
   apellido?: string

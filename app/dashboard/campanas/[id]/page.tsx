@@ -41,6 +41,11 @@ export default function DetalleCampanaPage() {
   const [descAgencia, setDescAgencia] = useState('')
   const [sectorObjetivo, setSectorObjetivo] = useState('')
   const [progGeneracion, setProgGeneracion] = useState<{ hecho: number; total: number } | null>(null)
+  const [modoBusqueda, setModoBusqueda] = useState<'dominios' | 'sector'>('dominios')
+  const [sectorBusqueda, setSectorBusqueda] = useState('')
+  const [paisBusqueda, setPaisBusqueda] = useState('España')
+  const [buscandoSector, setBuscandoSector] = useState(false)
+  const [dominiosSugeridos, setDominiosSugeridos] = useState<string[]>([])
 
   const cargarCampana = useCallback(async () => {
     const res = await fetch(`/api/campanas/${id}`)
@@ -110,6 +115,26 @@ export default function DetalleCampanaPage() {
     } catch (e: unknown) {
       setToast({ msg: (e as Error).message, tipo: 'error' })
       setFase(contactos.length > 0 ? 'listo' : 'idle')
+    }
+  }
+
+  const buscarPorSector = async () => {
+    if (!sectorBusqueda.trim()) return
+    setBuscandoSector(true)
+    setDominiosSugeridos([])
+    try {
+      const res = await fetch('/api/buscar-por-sector', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sector: sectorBusqueda, pais: paisBusqueda, cantidad: 15 }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setDominiosSugeridos(data.dominios)
+    } catch (e: unknown) {
+      setToast({ msg: (e as Error).message, tipo: 'error' })
+    } finally {
+      setBuscandoSector(false)
     }
   }
 
@@ -324,21 +349,120 @@ export default function DetalleCampanaPage() {
           ))}
         </div>
 
-        {/* Input dominios — primera búsqueda */}
+        {/* Panel búsqueda — primera vez */}
         {!tieneContactos && !enProceso && (
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Dominios objetivo</p>
-            <p className="text-xs text-gray-400 mb-3">Pega los dominios de las empresas a prospectar. Uno por línea, comas o URLs completas.</p>
-            <textarea
-              value={dominiosTexto}
-              onChange={(e) => setDominiosTexto(e.target.value)}
-              placeholder={'stripe.com\nshopify.com\nvercel.com'}
-              rows={6}
-              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 font-mono outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 resize-none transition-all"
-            />
-            {dominiosParsed.length > 0 && (
-              <p className="text-xs text-gray-400 mt-2">{dominiosParsed.length} dominio{dominiosParsed.length !== 1 ? 's' : ''} detectado{dominiosParsed.length !== 1 ? 's' : ''}</p>
-            )}
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200">
+              {(['dominios', 'sector'] as const).map((modo) => (
+                <button
+                  key={modo}
+                  onClick={() => setModoBusqueda(modo)}
+                  className={`flex-1 py-3 text-xs font-medium transition-colors ${
+                    modoBusqueda === modo
+                      ? 'text-orange-600 border-b-2 border-orange-500 bg-orange-50/50'
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  {modo === 'dominios' ? 'Por dominio' : 'Por sector con IA'}
+                </button>
+              ))}
+            </div>
+
+            <div className="p-5">
+              {modoBusqueda === 'dominios' ? (
+                <>
+                  <p className="text-xs text-gray-400 mb-3">Pega los dominios a prospectar. Uno por línea, comas o URLs completas.</p>
+                  <textarea
+                    value={dominiosTexto}
+                    onChange={(e) => setDominiosTexto(e.target.value)}
+                    placeholder={'stripe.com\nshopify.com\nvercel.com'}
+                    rows={6}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 font-mono outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 resize-none transition-all"
+                  />
+                  {dominiosParsed.length > 0 && (
+                    <p className="text-xs text-gray-400 mt-2">{dominiosParsed.length} dominio{dominiosParsed.length !== 1 ? 's' : ''} detectado{dominiosParsed.length !== 1 ? 's' : ''}</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-400 mb-3">Claude genera una lista de empresas reales del sector. Luego Hunter busca sus contactos automáticamente.</p>
+                  <div className="flex gap-3 mb-3">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-gray-500 mb-1.5">Sector</label>
+                      <input
+                        value={sectorBusqueda}
+                        onChange={(e) => setSectorBusqueda(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && buscarPorSector()}
+                        placeholder="ej. Ecommerce, SaaS, Consultoría..."
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                      />
+                    </div>
+                    <div className="w-36">
+                      <label className="block text-xs font-medium text-gray-500 mb-1.5">País</label>
+                      <input
+                        value={paisBusqueda}
+                        onChange={(e) => setPaisBusqueda(e.target.value)}
+                        placeholder="España"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={buscarPorSector}
+                    disabled={!sectorBusqueda.trim() || buscandoSector}
+                    className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+                  >
+                    {buscandoSector ? (
+                      <>
+                        <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                        </svg>
+                        Buscando empresas...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                        Generar empresas con IA
+                      </>
+                    )}
+                  </button>
+
+                  {/* Resultados sugeridos */}
+                  {dominiosSugeridos.length > 0 && (
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-gray-500">{dominiosSugeridos.length} empresas encontradas por IA</p>
+                        <button
+                          onClick={() => setDominiosSugeridos([])}
+                          className="text-xs text-gray-400 hover:text-gray-600"
+                        >
+                          Limpiar
+                        </button>
+                      </div>
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-48 overflow-y-auto">
+                        <div className="flex flex-wrap gap-1.5">
+                          {dominiosSugeridos.map((d) => (
+                            <span key={d} className="inline-flex items-center px-2 py-1 bg-white border border-gray-200 rounded text-xs font-mono text-gray-600">
+                              {d}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => buscarContactos(dominiosSugeridos)}
+                        className="mt-3 inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+                      >
+                        Buscar contactos en estas {dominiosSugeridos.length} empresas →
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 
