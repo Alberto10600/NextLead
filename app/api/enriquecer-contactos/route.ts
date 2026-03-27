@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { dominios } = body as { dominios: string[] }
+  const { dominios, max_por_dominio = 0 } = body as { dominios: string[]; max_por_dominio?: number }
 
   if (!dominios?.length) {
     return NextResponse.json({ error: 'No hay dominios' }, { status: 400 })
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   for (const dominio of dominios) {
     await sleep(200)
     try {
-      const resultados = await buscarTodosLosContactos(dominio)
+      const resultados = await buscarTodosLosContactos(dominio, max_por_dominio)
       if (resultados.length === 0) {
         dominiosSinResultados.push(dominio)
       } else {

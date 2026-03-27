@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Campana, Contacto, Plantilla, Tono } from '@/types'
+import type { HunterContacto } from '@/lib/hunter'
 import TablaContactos from '@/components/dashboard/TablaContactos'
 import Toast from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
@@ -48,6 +49,14 @@ export default function DetalleCampanaPage() {
   const [buscandoSector, setBuscandoSector] = useState(false)
   const [dominiosSugeridos, setDominiosSugeridos] = useState<string[]>([])
   const [modoEnvio, setModoEnvio] = useState<'test' | 'real'>('test')
+  // Capa 1: límite de contactos por dominio
+  const [maxPorDominio, setMaxPorDominio] = useState<number>(3)
+  // Capa 2: contactos pendientes de filtrado (entre Hunter y guardar)
+  const [contactosPrevio, setContactosPrevio] = useState<HunterContacto[]>([])
+  const [excluirGenericos, setExcluirGenericos] = useState(true)
+  const [filtroCargo, setFiltroCargo] = useState('')
+  // Capa 3: selección de dominios sugeridos por IA
+  const [dominiosSeleccionados, setDominiosSeleccionados] = useState<Set<string>>(new Set())
   // P2-6 tono
   const [tono, setTono] = useState<Tono>('cercano')
   // P2-4 días de seguimiento
@@ -98,6 +107,30 @@ export default function DetalleCampanaPage() {
     })
   }
 
+  // Prefijos de email genérico a excluir
+  const EMAILS_GENERICOS = ['info', 'contact', 'contacto', 'hola', 'hello', 'admin', 'soporte',
+    'support', 'noreply', 'no-reply', 'ventas', 'marketing', 'ayuda', 'help', 'accounts',
+    'billing', 'reception', 'recepcion', 'general', 'enquiries', 'sales', 'office', 'oficina']
+
+  const aplicarFiltros = (lista: HunterContacto[]) => {
+    let filtrada = lista
+    if (excluirGenericos) {
+      filtrada = filtrada.filter((c) => {
+        const prefijo = c.email.split('@')[0].toLowerCase()
+        return !EMAILS_GENERICOS.some((g) => prefijo === g || prefijo.startsWith(g + '.'))
+      })
+    }
+    if (filtroCargo.trim()) {
+      const keywords = filtroCargo.toLowerCase().split(',').map((k) => k.trim()).filter(Boolean)
+      filtrada = filtrada.filter((c) => {
+        if (!c.cargo) return false
+        const cargo = c.cargo.toLowerCase()
+        return keywords.some((k) => cargo.includes(k))
+      })
+    }
+    return filtrada
+  }
+
   const buscarContactos = async (dominios: string[]) => {
     if (!campana || dominios.length === 0) return
     setFase('buscando')
@@ -109,7 +142,7 @@ export default function DetalleCampanaPage() {
       const res = await fetch('/api/enriquecer-contactos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dominios }),
+        body: JSON.stringify({ dominios, max_por_dominio: maxPorDominio }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error buscando contactos')
@@ -120,20 +153,39 @@ export default function DetalleCampanaPage() {
         return
       }
 
-      const res2 = await fetch('/api/guardar-contactos', {
+      // Capa 2: mostrar panel de filtrado antes de guardar
+      setContactosPrevio(data.contactos)
+      setStats({ sinResultados: data.dominios_sin_resultados?.length || 0 })
+      setFase('listo')
+    } catch (e: unknown) {
+      setToast({ msg: (e as Error).message, tipo: 'error' })
+      setFase(contactos.length > 0 ? 'listo' : 'idle')
+    }
+  }
+
+  const guardarContactosFiltrados = async () => {
+    const filtrados = aplicarFiltros(contactosPrevio)
+    if (filtrados.length === 0) {
+      setToast({ msg: 'Los filtros excluyen todos los contactos. Ajusta los criterios.', tipo: 'info' })
+      return
+    }
+    setFase('buscando')
+    try {
+      const res = await fetch('/api/guardar-contactos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contactos: data.contactos, campana_id: id }),
+        body: JSON.stringify({ contactos: filtrados, campana_id: id }),
       })
-      const data2 = await res2.json()
-      if (!res2.ok) throw new Error(data2.error || 'Error guardando contactos')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error guardando contactos')
 
-      setContactos(data2.contactos)
-      setStats({ sinResultados: data.dominios_sin_resultados?.length || 0 })
+      setContactos(prev => [...prev, ...data.contactos])
+      setContactosPrevio([])
       setFase('listo')
       setMostrarAnadir(false)
       setDominiosNuevos('')
-      setToast({ msg: `${data2.contactos.length} contactos encontrados en ${dominios.length} dominio${dominios.length !== 1 ? 's' : ''}`, tipo: 'success' })
+      const cola = data.en_cola > 0 ? ` · ${data.en_cola} superan el límite del plan` : ''
+      setToast({ msg: `${data.contactos.length} contactos guardados${cola}`, tipo: 'success' })
     } catch (e: unknown) {
       setToast({ msg: (e as Error).message, tipo: 'error' })
       setFase(contactos.length > 0 ? 'listo' : 'idle')
@@ -153,6 +205,7 @@ export default function DetalleCampanaPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setDominiosSugeridos(data.dominios)
+      setDominiosSeleccionados(new Set(data.dominios))
     } catch (e: unknown) {
       setToast({ msg: (e as Error).message, tipo: 'error' })
     } finally {
@@ -476,6 +529,29 @@ export default function DetalleCampanaPage() {
             </div>
 
             <div className="p-5">
+              {/* Capa 1: selector de max contactos por dominio */}
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+                <label className="text-xs font-medium text-gray-500 shrink-0">Contactos por empresa</label>
+                <div className="flex gap-1.5">
+                  {[1, 2, 3, 5, 0].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setMaxPorDominio(n)}
+                      className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
+                        maxPorDominio === n
+                          ? 'bg-orange-500 text-white border-orange-500'
+                          : 'text-gray-500 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {n === 0 ? 'Todos' : n}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-gray-400">
+                  {maxPorDominio === 0 ? 'Sin límite — puede generar listas muy largas' : `Máx. ${maxPorDominio} por empresa`}
+                </p>
+              </div>
+
               {modoBusqueda === 'dominios' ? (
                 <>
                   <p className="text-xs text-gray-400 mb-3">Pega los dominios a prospectar. Uno por línea, comas o URLs completas.</p>
@@ -546,35 +622,76 @@ export default function DetalleCampanaPage() {
                     )}
                   </button>
 
-                  {/* Resultados sugeridos */}
+                  {/* Capa 3: Resultados sugeridos con checkboxes */}
                   {dominiosSugeridos.length > 0 && (
                     <div className="mt-4">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs font-medium text-gray-500">
-                          {dominiosSugeridos.length} empresas — {sectorBusqueda}{regionBusqueda ? ` · ${regionBusqueda}` : ''}
+                          {dominiosSugeridos.length} empresas sugeridas — selecciona las que quieres enriquecer
                         </p>
-                        <button
-                          onClick={() => setDominiosSugeridos([])}
-                          className="text-xs text-gray-400 hover:text-gray-600"
-                        >
-                          Limpiar
-                        </button>
-                      </div>
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-48 overflow-y-auto">
-                        <div className="flex flex-wrap gap-1.5">
-                          {dominiosSugeridos.map((d) => (
-                            <span key={d} className="inline-flex items-center px-2 py-1 bg-white border border-gray-200 rounded text-xs font-mono text-gray-600">
-                              {d}
-                            </span>
-                          ))}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setDominiosSeleccionados(new Set(dominiosSugeridos))}
+                            className="text-xs text-gray-400 hover:text-gray-600"
+                          >
+                            Todas
+                          </button>
+                          <span className="text-gray-200">|</span>
+                          <button
+                            onClick={() => setDominiosSeleccionados(new Set())}
+                            className="text-xs text-gray-400 hover:text-gray-600"
+                          >
+                            Ninguna
+                          </button>
+                          <span className="text-gray-200">|</span>
+                          <button
+                            onClick={() => { setDominiosSugeridos([]); setDominiosSeleccionados(new Set()) }}
+                            className="text-xs text-gray-400 hover:text-gray-600"
+                          >
+                            Limpiar
+                          </button>
                         </div>
                       </div>
-                      <button
-                        onClick={() => buscarContactos(dominiosSugeridos)}
-                        className="mt-3 inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
-                      >
-                        Buscar contactos en estas {dominiosSugeridos.length} empresas →
-                      </button>
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-56 overflow-y-auto">
+                        <div className="grid grid-cols-2 gap-1">
+                          {dominiosSugeridos.map((d) => {
+                            const sel = dominiosSeleccionados.has(d)
+                            return (
+                              <label
+                                key={d}
+                                className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${sel ? 'bg-orange-50' : 'hover:bg-gray-100'}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={sel}
+                                  onChange={() => {
+                                    setDominiosSeleccionados(prev => {
+                                      const next = new Set(prev)
+                                      sel ? next.delete(d) : next.add(d)
+                                      return next
+                                    })
+                                  }}
+                                  className="accent-orange-500 shrink-0"
+                                />
+                                <span className={`text-xs font-mono truncate ${sel ? 'text-orange-700' : 'text-gray-500'}`}>{d}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <p className="text-xs text-gray-400">
+                          {dominiosSeleccionados.size} de {dominiosSugeridos.length} seleccionadas
+                          {maxPorDominio > 0 && ` · ~${dominiosSeleccionados.size * maxPorDominio} contactos máx.`}
+                        </p>
+                        <button
+                          onClick={() => buscarContactos(Array.from(dominiosSeleccionados))}
+                          disabled={dominiosSeleccionados.size === 0}
+                          className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+                        >
+                          Buscar contactos →
+                        </button>
+                      </div>
                     </div>
                   )}
                 </>
@@ -582,6 +699,85 @@ export default function DetalleCampanaPage() {
             </div>
           </div>
         )}
+
+        {/* Capa 2: Panel de filtrado pre-guardado */}
+        {contactosPrevio.length > 0 && (() => {
+          const filtrados = aplicarFiltros(contactosPrevio)
+          const excluidos = contactosPrevio.length - filtrados.length
+          return (
+            <div className="bg-white border border-orange-200 rounded-lg overflow-hidden">
+              <div className="px-5 py-4 border-b border-orange-100 bg-orange-50/40 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Hunter encontró {contactosPrevio.length} contactos — revisa antes de guardar
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">Filtra para quedarte solo con los más relevantes</p>
+                </div>
+                <button
+                  onClick={() => setContactosPrevio([])}
+                  className="text-gray-300 hover:text-gray-500 transition-colors"
+                >
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="px-5 py-4 space-y-4">
+                {/* Excluir genéricos */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={excluirGenericos}
+                    onChange={(e) => setExcluirGenericos(e.target.checked)}
+                    className="mt-0.5 accent-orange-500"
+                  />
+                  <div>
+                    <p className="text-sm text-gray-800 group-hover:text-gray-900 transition-colors">
+                      Excluir emails genéricos
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      info@, contacto@, admin@, soporte@, ventas@... No son decisores.
+                    </p>
+                  </div>
+                </label>
+
+                {/* Filtro por cargo */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                    Solo incluir contactos cuyo cargo contenga (opcional)
+                  </label>
+                  <input
+                    value={filtroCargo}
+                    onChange={(e) => setFiltroCargo(e.target.value)}
+                    placeholder="ej. director, ceo, marketing, manager"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">Separados por comas. Vacío = incluir todos los cargos.</p>
+                </div>
+
+                {/* Preview conteo */}
+                <div className={`flex items-center justify-between px-4 py-3 rounded-lg ${filtrados.length > 0 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  <div>
+                    <p className={`text-sm font-semibold ${filtrados.length > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      {filtrados.length} contactos pasarán el filtro
+                    </p>
+                    {excluidos > 0 && (
+                      <p className="text-xs text-gray-400 mt-0.5">{excluidos} excluidos por los filtros actuales</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={guardarContactosFiltrados}
+                    disabled={filtrados.length === 0 || fase === 'buscando'}
+                    className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+                  >
+                    {fase === 'buscando' ? <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> : null}
+                    Guardar {filtrados.length} contactos
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Panel generar emails con IA */}
         {mostrarGenerador && tieneContactos && (
@@ -753,6 +949,23 @@ export default function DetalleCampanaPage() {
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-5">
             <p className="text-xs font-semibold text-orange-700 uppercase tracking-wider mb-1">Añadir más dominios</p>
             <p className="text-xs text-orange-600/70 mb-3">Los nuevos contactos se añadirán a los existentes. No se duplicarán emails ya guardados.</p>
+            {/* Capa 1 también en añadir */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs text-orange-700 shrink-0">Contactos por empresa</span>
+              {[1, 2, 3, 5, 0].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setMaxPorDominio(n)}
+                  className={`px-2 py-1 text-xs rounded border transition-colors ${
+                    maxPorDominio === n
+                      ? 'bg-orange-500 text-white border-orange-500'
+                      : 'text-orange-700 border-orange-200 bg-white hover:border-orange-400'
+                  }`}
+                >
+                  {n === 0 ? 'Todos' : n}
+                </button>
+              ))}
+            </div>
             <textarea
               value={dominiosNuevos}
               onChange={(e) => setDominiosNuevos(e.target.value)}

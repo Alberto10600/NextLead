@@ -137,17 +137,26 @@ async function fetchPagina(
  * Devuelve TODOS los emails de un dominio paginando automáticamente.
  * Detecta el límite real del plan (10 en free, 100 en paid) y pagina con él.
  */
-export async function buscarTodosLosContactos(dominio: string): Promise<HunterContacto[]> {
+/**
+ * Devuelve TODOS los emails de un dominio paginando automáticamente.
+ * @param maxPorDominio - 0 = sin límite, >0 = máximo de contactos a devolver
+ */
+export async function buscarTodosLosContactos(dominio: string, maxPorDominio = 0): Promise<HunterContacto[]> {
   const primera = await fetchPagina(dominio, 0)
   const todos = [...primera.emails]
 
+  // Si ya alcanzamos el límite con la primera página, devolver ya
+  if (maxPorDominio > 0 && todos.length >= maxPorDominio) {
+    return todos.slice(0, maxPorDominio)
+  }
+
   // El límite efectivo = cuántos trajo la primera página (10 en free, 100 en paid)
-  // No usamos meta.results porque el plan free lo reporta como 10 aunque haya más
   const limite = primera.emails.length || PAGE_SIZE
   let offset = limite
   let ultimaPaginaLlena = primera.emails.length === limite
 
   while (ultimaPaginaLlena) {
+    if (maxPorDominio > 0 && todos.length >= maxPorDominio) break
     await sleep(300)
     const pagina = await fetchPagina(dominio, offset, limite)
     if (pagina.emails.length === 0) break
@@ -156,6 +165,7 @@ export async function buscarTodosLosContactos(dominio: string): Promise<HunterCo
     ultimaPaginaLlena = pagina.emails.length === limite
   }
 
-  console.log(`[Hunter] ${dominio} → ${todos.length} contactos`)
-  return todos
+  const resultado = maxPorDominio > 0 ? todos.slice(0, maxPorDominio) : todos
+  console.log(`[Hunter] ${dominio} → ${resultado.length} contactos (max: ${maxPorDominio || 'todos'})`)
+  return resultado
 }
