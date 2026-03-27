@@ -61,44 +61,48 @@ export async function descubrirEmpresas(
   return (data.data?.companies || []) as DiscoverEmpresa[]
 }
 
-// ─── Domain Search: busca emails en un dominio con filtros ────────────────────
+// ─── Domain Search: busca emails en un dominio con filtros y paginación ──────
 
-export async function buscarContactosPorDominio(
+const HUNTER_PAGE_SIZE = 100 // máximo permitido por Hunter
+
+type HunterEmailRaw = {
+  first_name?: string
+  last_name?: string
+  position?: string
+  value: string
+  linkedin?: string
+}
+
+async function fetchPagina(
   dominio: string,
-  cargosObjetivo: string[] = [],
-  departamentos: HunterDepartamento[] = [],
-  seniority: HunterSeniority[] = [],
-  limite = 5
-): Promise<HunterContacto[]> {
-  const intentar = async (): Promise<HunterContacto[]> => {
-    const params = new URLSearchParams({
-      domain:  dominio,
-      api_key: API_KEY(),
-      limit:   String(limite),
-    })
+  dept: HunterDepartamento | undefined,
+  sen: HunterSeniority | undefined,
+  offset: number,
+): Promise<{ emails: HunterContacto[]; total: number; empresa: string }> {
+  const key = API_KEY()
+  const params = new URLSearchParams({
+    domain:  dominio,
+    api_key: key,
+    limit:   String(HUNTER_PAGE_SIZE),
+    offset:  String(offset),
+  })
+  if (dept) params.set('department', dept)
+  if (sen)  params.set('seniority', sen)
 
-    // Pasar el primer departamento/seniority si hay seleccionados
-    // (Hunter acepta uno por llamada; para múltiples hacemos varias llamadas)
-    if (departamentos.length === 1) params.set('department', departamentos[0])
-    if (seniority.length === 1)     params.set('seniority', seniority[0])
-
+  let intentos = 0
+  while (intentos < 3) {
     const res = await fetch(`${HUNTER_BASE}/domain-search?${params.toString()}`)
-
-    if (res.status === 429) throw { status: 429 }
-    if (!res.ok) return []
+    if (res.status === 429) {
+      await sleep(2000 * (intentos + 1))
+      intentos++
+      continue
+    }
+    if (!res.ok) return { emails: [], total: 0, empresa: dominio }
 
     const data = await res.json()
-    if (!data.data?.emails?.length) return []
-
-    const empresa = data.data.organization || dominio
-
-    let contactos: HunterContacto[] = data.data.emails.map((p: {
-      first_name?: string
-      last_name?: string
-      position?: string
-      value: string
-      linkedin?: string
-    }) => ({
+    const empresa: string = data.data?.organization || dominio
+    const total: number = data.meta?.results || data.data?.emails?.length || 0
+    const emails: HunterContacto[] = (data.data?.emails || []).map((p: HunterEmailRaw) => ({
       nombre:       p.first_name,
       apellido:     p.last_name,
       cargo:        p.position,
@@ -107,64 +111,73 @@ export async function buscarContactosPorDominio(
       empresa,
       dominio,
     }))
-
-    // Filtrar por cargos si se especificaron (además del filtro de Hunter)
-    if (cargosObjetivo.length > 0) {
-      const filtrados = contactos.filter((c) =>
-        c.cargo && cargosObjetivo.some((cargo) =>
-          c.cargo!.toLowerCase().includes(cargo.toLowerCase())
-        )
-      )
-      if (filtrados.length > 0) contactos = filtrados
-    }
-
-    return contactos.slice(0, 3)
+    return { emails, total, empresa }
   }
-
-  try {
-    return await intentar()
-  } catch (e: unknown) {
-    const err = e as { status?: number }
-    if (err?.status === 429) {
-      await sleep(2000)
-      return await intentar()
-    }
-    return []
-  }
+  return { emails: [], total: 0, empresa: dominio }
 }
 
-// ─── Múltiples departamentos: una llamada por cada uno ───────────────────────
+/**
+ * Obtiene TODOS los emails de un dominio para una combinación dept+seniority,
+ * paginando automáticamente hasta agotar los resultados.
+ */
+async function fetchTodosLosEmails(
+  dominio: string,
+  dept: HunterDepartamento | undefined,
+  sen: HunterSeniority | undefined,
+): Promise<HunterContacto[]> {
+  const primera = await fetchPagina(dominio, dept, sen, 0)
+  const todos = [...primera.emails]
+  let offset = HUNTER_PAGE_SIZE
 
+  while (offset < primera.total) {
+    await sleep(150)
+    const pagina = await fetchPagina(dominio, dept, sen, offset)
+    todos.push(...pagina.emails)
+    offset += HUNTER_PAGE_SIZE
+    if (pagina.emails.length === 0) break
+  }
+
+  return todos
+}
+
+/**
+ * Busca contactos en un dominio aplicando filtros de departamento y seniority.
+ * Itera todas las combinaciones dept × seniority y deduplica por email.
+ */
 export async function buscarContactosMultiDept(
   dominio: string,
   departamentos: HunterDepartamento[],
   seniority: HunterSeniority[],
 ): Promise<HunterContacto[]> {
-  if (departamentos.length <= 1 && seniority.length <= 1) {
-    return buscarContactosPorDominio(dominio, [], departamentos, seniority)
-  }
-
-  // Si hay múltiples departamentos, hacemos una llamada por cada uno
-  const depts = departamentos.length > 0 ? departamentos : [undefined]
-  const todos: HunterContacto[] = []
   const emailsVistos = new Set<string>()
+  const todos: HunterContacto[] = []
+
+  // Combinaciones: si no hay filtros, una sola llamada sin filtro
+  const depts: (HunterDepartamento | undefined)[] = departamentos.length > 0 ? departamentos : [undefined]
+  const seniors: (HunterSeniority | undefined)[] = seniority.length > 0 ? seniority : [undefined]
 
   for (const dept of depts) {
-    await sleep(150)
-    const resultados = await buscarContactosPorDominio(
-      dominio, [],
-      dept ? [dept] : [],
-      seniority.slice(0, 1),
-      3
-    )
-    for (const c of resultados) {
-      if (!emailsVistos.has(c.email)) {
-        emailsVistos.add(c.email)
-        todos.push(c)
+    for (const sen of seniors) {
+      await sleep(150)
+      const resultados = await fetchTodosLosEmails(dominio, dept, sen)
+      for (const c of resultados) {
+        if (!emailsVistos.has(c.email)) {
+          emailsVistos.add(c.email)
+          todos.push(c)
+        }
       }
     }
-    if (todos.length >= 5) break // max 5 por dominio
   }
 
   return todos
+}
+
+// Alias para compatibilidad con código existente
+export async function buscarContactosPorDominio(
+  dominio: string,
+  _cargosObjetivo: string[] = [],
+  departamentos: HunterDepartamento[] = [],
+  seniority: HunterSeniority[] = [],
+): Promise<HunterContacto[]> {
+  return buscarContactosMultiDept(dominio, departamentos, seniority)
 }
