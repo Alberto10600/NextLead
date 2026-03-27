@@ -135,20 +135,27 @@ async function fetchPagina(
 
 /**
  * Devuelve TODOS los emails de un dominio paginando automáticamente.
- * Sin ningún filtro extra — igual que Hunter.io domain search por defecto.
+ * Detecta el límite real del plan (10 en free, 100 en paid) y pagina con él.
  */
 export async function buscarTodosLosContactos(dominio: string): Promise<HunterContacto[]> {
+  // Primera llamada: detecta el límite efectivo del plan
   const primera = await fetchPagina(dominio, 0)
   const todos = [...primera.emails]
-  let offset = PAGE_SIZE
+
+  if (primera.total <= primera.emails.length) return todos
+
+  // El límite real es cuántos trajo la primera página
+  const limiteEfectivo = primera.emails.length || PAGE_SIZE
+  let offset = limiteEfectivo
 
   while (offset < primera.total) {
-    await sleep(200)
-    const pagina = await fetchPagina(dominio, offset)
+    await sleep(300)
+    const pagina = await fetchPagina(dominio, offset, limiteEfectivo)
     if (pagina.emails.length === 0) break
     todos.push(...pagina.emails)
-    offset += PAGE_SIZE
+    offset += limiteEfectivo
   }
 
+  console.log(`[Hunter] ${dominio} → ${todos.length} / ${primera.total} contactos totales`)
   return todos
 }
