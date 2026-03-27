@@ -15,6 +15,9 @@ export async function PATCH(
 
   if (body.estado) campos.estado = body.estado
   if (body.notas !== undefined) campos.notas = body.notas
+  if (body.asunto_generado !== undefined) campos.asunto_generado = body.asunto_generado
+  if (body.email_generado !== undefined) campos.email_generado = body.email_generado
+  if (body.contexto_web !== undefined) campos.contexto_web = body.contexto_web
   if (body.estado === 'respondido') campos.fecha_respuesta = new Date().toISOString()
 
   const { data, error } = await supabase
@@ -27,8 +30,8 @@ export async function PATCH(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Si se marca como respondido, cancelar seguimientos pendientes
-  if (body.estado === 'respondido') {
+  // Si se marca como respondido o no_contactar, cancelar seguimientos pendientes
+  if (body.estado === 'respondido' || body.estado === 'no_contactar') {
     await supabase
       .from('seguimientos')
       .update({ estado: 'cancelado' })

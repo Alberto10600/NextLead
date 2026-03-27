@@ -7,12 +7,13 @@ interface TarjetaContactoProps {
 }
 
 const estadoBadge: Record<Contacto['estado'], 'default' | 'success' | 'warning' | 'error' | 'info'> = {
-  pendiente:  'default',
-  enviado:    'info',
-  abierto:    'warning',
-  respondido: 'success',
-  rebotado:   'error',
-  error:      'error',
+  pendiente:    'default',
+  enviado:      'info',
+  abierto:      'warning',
+  respondido:   'success',
+  rebotado:     'error',
+  error:        'error',
+  no_contactar: 'default',
 }
 
 export default function TarjetaContacto({ contacto }: TarjetaContactoProps) {

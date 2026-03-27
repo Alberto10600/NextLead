@@ -1,6 +1,6 @@
 export type Plan = 'free' | 'starter' | 'pro' | 'business'
 export type EstadoCampana = 'borrador' | 'procesando' | 'activa' | 'pausada' | 'completada'
-export type EstadoContacto = 'pendiente' | 'enviado' | 'abierto' | 'respondido' | 'rebotado' | 'error'
+export type EstadoContacto = 'pendiente' | 'enviado' | 'abierto' | 'respondido' | 'rebotado' | 'error' | 'no_contactar'
 
 // Valores exactos de la API de Hunter.io
 export type HunterDepartamento =
@@ -74,6 +74,8 @@ export interface Contacto {
   numero_seguimiento: number
   notas?: string
   created_at?: string
+  // campo virtual: viene del join con campanas en /dashboard/contactos
+  sector?: string
 }
 
 export interface Seguimiento {

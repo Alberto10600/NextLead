@@ -10,13 +10,14 @@ interface TablaContactosProps {
   onRegenerar?: (id: string) => void
 }
 
-const estadoStyles: Record<Contacto['estado'], { bg: string; text: string }> = {
-  pendiente:  { bg: 'bg-gray-100',      text: 'text-gray-500' },
-  enviado:    { bg: 'bg-orange-50',     text: 'text-orange-600' },
-  abierto:    { bg: 'bg-amber-50',      text: 'text-amber-600' },
-  respondido: { bg: 'bg-emerald-50',    text: 'text-emerald-600' },
-  rebotado:   { bg: 'bg-red-50',        text: 'text-red-500' },
-  error:      { bg: 'bg-red-50',        text: 'text-red-500' },
+const estadoStyles: Record<Contacto['estado'], { bg: string; text: string; label: string }> = {
+  pendiente:     { bg: 'bg-gray-100',    text: 'text-gray-500',    label: 'Pendiente' },
+  enviado:       { bg: 'bg-orange-50',   text: 'text-orange-600',  label: 'Enviado' },
+  abierto:       { bg: 'bg-amber-50',    text: 'text-amber-600',   label: 'Abierto' },
+  respondido:    { bg: 'bg-emerald-50',  text: 'text-emerald-600', label: 'Respondido' },
+  rebotado:      { bg: 'bg-red-50',      text: 'text-red-500',     label: 'Rebotado' },
+  error:         { bg: 'bg-red-50',      text: 'text-red-400',     label: 'Error' },
+  no_contactar:  { bg: 'bg-gray-100',    text: 'text-gray-400',    label: 'No contactar' },
 }
 
 const DECISION_MAKER_KEYWORDS = [
@@ -45,10 +46,20 @@ type Tab = 'todos' | 'decisores' | 'genericos'
 const PAGE_SIZE = 50
 
 function descargarCSV(contactos: Contacto[]) {
-  const cabecera = ['Empresa', 'Nombre', 'Apellido', 'Cargo', 'Email', 'Dominio', 'LinkedIn', 'Estado']
+  const tieneSector = contactos.some((c) => c.sector)
+  const cabecera = [
+    'Empresa', 'Nombre', 'Apellido', 'Cargo', 'Email', 'Dominio', 'LinkedIn',
+    ...(tieneSector ? ['Sector'] : []),
+    'Estado', 'Fecha envío', 'Fecha apertura', 'Fecha respuesta',
+  ]
   const filas = contactos.map((c) => [
     c.empresa || '', c.nombre || '', c.apellido || '',
-    c.cargo || '', c.email, c.dominio || '', c.linkedin_url || '', c.estado,
+    c.cargo || '', c.email, c.dominio || '', c.linkedin_url || '',
+    ...(tieneSector ? [c.sector || ''] : []),
+    c.estado,
+    c.fecha_envio ? new Date(c.fecha_envio).toLocaleDateString('es-ES') : '',
+    c.fecha_apertura ? new Date(c.fecha_apertura).toLocaleDateString('es-ES') : '',
+    c.fecha_respuesta ? new Date(c.fecha_respuesta).toLocaleDateString('es-ES') : '',
   ])
   const csv = [cabecera, ...filas]
     .map((fila) => fila.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
@@ -62,12 +73,15 @@ function descargarCSV(contactos: Contacto[]) {
   URL.revokeObjectURL(url)
 }
 
-export default function TablaContactos({ contactos, onExcluir, onRegenerar }: TablaContactosProps) {
+export default function TablaContactos({ contactos: contactosIniciales, onExcluir, onRegenerar }: TablaContactosProps) {
+  const [contactos, setContactos] = useState(contactosIniciales)
   const [contactoSeleccionado, setContactoSeleccionado] = useState<Contacto | null>(null)
   const [tab, setTab] = useState<Tab>('todos')
   const [busqueda, setBusqueda] = useState('')
   const [pagina, setPagina] = useState(0)
+  const [marcandoOptOut, setMarcandoOptOut] = useState<string | null>(null)
 
+  const tieneSector = useMemo(() => contactos.some((c) => c.sector), [contactos])
   const decisores = useMemo(() => contactos.filter(esDecisionMaker), [contactos])
   const genericos = useMemo(() => contactos.filter(esGenerico), [contactos])
 
@@ -77,7 +91,7 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
     if (!busqueda.trim()) return baseTab
     const q = busqueda.toLowerCase()
     return baseTab.filter((c) =>
-      [c.nombre, c.apellido, c.empresa, c.cargo, c.email]
+      [c.nombre, c.apellido, c.empresa, c.cargo, c.email, c.sector]
         .filter(Boolean).join(' ').toLowerCase().includes(q)
     )
   }, [baseTab, busqueda])
@@ -91,6 +105,30 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
   const cambiarTab = (t: Tab) => { setTab(t); setPagina(0) }
   const cambiarBusqueda = (v: string) => { setBusqueda(v); setPagina(0) }
 
+  const marcarNoContactar = async (c: Contacto) => {
+    if (c.estado === 'no_contactar') return
+    setMarcandoOptOut(c.id)
+    try {
+      const res = await fetch(`/api/contactos/${c.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'no_contactar' }),
+      })
+      if (res.ok) {
+        setContactos((prev) => prev.map((x) => x.id === c.id ? { ...x, estado: 'no_contactar' } : x))
+      }
+    } finally {
+      setMarcandoOptOut(null)
+    }
+  }
+
+  const actualizarContacto = (id: string, campos: Partial<Contacto>) => {
+    setContactos((prev) => prev.map((c) => c.id === id ? { ...c, ...campos } : c))
+    if (contactoSeleccionado?.id === id) {
+      setContactoSeleccionado((prev) => prev ? { ...prev, ...campos } : prev)
+    }
+  }
+
   return (
     <>
       {/* Toolbar */}
@@ -99,7 +137,7 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5">
             {([
-              ['todos',    `Todos · ${contactos.length}`],
+              ['todos',     `Todos · ${contactos.length}`],
               ['decisores', `Decision Makers · ${decisores.length}`],
               ['genericos', `Genéricos · ${genericos.length}`],
             ] as [Tab, string][]).map(([t, label]) => (
@@ -135,7 +173,7 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
           </svg>
           <input
             type="text"
-            placeholder="Buscar por nombre, empresa, cargo o email..."
+            placeholder="Buscar por nombre, empresa, cargo, email o sector..."
             value={busqueda}
             onChange={(e) => cambiarBusqueda(e.target.value)}
             className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400/40 focus:border-orange-400/40 transition-all duration-150"
@@ -152,7 +190,7 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
         {filtrados.length > 0 && (
           <p className="text-xs text-gray-400">
             {filtrados.length > PAGE_SIZE ? `${inicio}–${fin} de ${filtrados.length} contactos` : `${filtrados.length} contacto${filtrados.length !== 1 ? 's' : ''}`}
-            {busqueda && <span className="ml-1">para "{busqueda}"</span>}
+            {busqueda && <span className="ml-1">para &quot;{busqueda}&quot;</span>}
           </p>
         )}
       </div>
@@ -166,14 +204,17 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
               <th className="text-left px-5 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Nombre</th>
               <th className="text-left px-5 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Cargo</th>
               <th className="text-left px-5 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Email</th>
+              {tieneSector && (
+                <th className="text-left px-5 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Sector</th>
+              )}
               <th className="text-left px-5 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Estado</th>
-              <th className="px-5 py-3 w-24" />
+              <th className="px-5 py-3 w-32" />
             </tr>
           </thead>
           <tbody>
             {contactosPagina.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-16 text-center text-gray-400 text-sm">
+                <td colSpan={tieneSector ? 7 : 6} className="px-5 py-16 text-center text-gray-400 text-sm">
                   {busqueda ? `Sin resultados para "${busqueda}"` : 'No hay contactos en esta categoría'}
                 </td>
               </tr>
@@ -181,13 +222,19 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
             {contactosPagina.map((c) => {
               const badge = estadoStyles[c.estado] || estadoStyles.pendiente
               const decisor = esDecisionMaker(c)
+              const esNoContactar = c.estado === 'no_contactar'
               return (
-                <tr key={c.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors duration-100 group">
+                <tr
+                  key={c.id}
+                  className={`border-b border-gray-100 last:border-0 transition-colors duration-100 group ${
+                    esNoContactar ? 'opacity-50' : 'hover:bg-gray-50'
+                  }`}
+                >
                   <td className="px-5 py-3.5 font-semibold text-gray-900">{c.empresa || '—'}</td>
                   <td className="px-5 py-3.5 text-gray-700">
                     <div className="flex items-center gap-1.5">
                       {[c.nombre, c.apellido].filter(Boolean).join(' ') || '—'}
-                      {decisor && (
+                      {decisor && !esNoContactar && (
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
                           DM
                         </span>
@@ -198,14 +245,17 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
                   <td className="px-5 py-3.5">
                     <span className="font-mono text-xs text-gray-500">{c.email}</span>
                   </td>
+                  {tieneSector && (
+                    <td className="px-5 py-3.5 text-xs text-gray-400">{c.sector || '—'}</td>
+                  )}
                   <td className="px-5 py-3.5">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
-                      {c.estado}
+                      {badge.label}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-1">
-                      {c.email_generado ? (
+                      {c.email_generado && !esNoContactar && (
                         <button
                           onClick={() => setContactoSeleccionado(c)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-md transition-colors"
@@ -213,13 +263,24 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
                           </svg>
-                          Ver email
+                          Ver
                         </button>
-                      ) : (
-                        <span className="px-2.5 py-1 text-xs text-gray-300">—</span>
+                      )}
+                      {!esNoContactar && (
+                        <button
+                          onClick={() => marcarNoContactar(c)}
+                          disabled={marcandoOptOut === c.id}
+                          title="Marcar como no contactar (opt-out)"
+                          className="opacity-0 group-hover:opacity-100 px-2 py-1 text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                        >
+                          {marcandoOptOut === c.id ? '…' : '✕'}
+                        </button>
                       )}
                       {onExcluir && (
-                        <button onClick={() => onExcluir(c.id)} className="opacity-0 group-hover:opacity-100 px-2 py-1 text-xs text-red-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all">
+                        <button
+                          onClick={() => onExcluir(c.id)}
+                          className="opacity-0 group-hover:opacity-100 px-2 py-1 text-xs text-red-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                        >
                           Excluir
                         </button>
                       )}
@@ -253,6 +314,7 @@ export default function TablaContactos({ contactos, onExcluir, onRegenerar }: Ta
           contacto={contactoSeleccionado}
           onClose={() => setContactoSeleccionado(null)}
           onRegenerar={onRegenerar ? () => { onRegenerar(contactoSeleccionado.id); setContactoSeleccionado(null) } : undefined}
+          onUpdate={(campos) => actualizarContacto(contactoSeleccionado.id, campos)}
         />
       )}
     </>
