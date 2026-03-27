@@ -1,10 +1,12 @@
 -- P2 features migration
 -- Run this in Supabase SQL editor: Dashboard → SQL Editor → New query
 
--- Tono de email por campaña
+-- Tono, seguimientos y throttling por campaña
 ALTER TABLE campanas
   ADD COLUMN IF NOT EXISTS tono text DEFAULT 'cercano',
-  ADD COLUMN IF NOT EXISTS dias_seguimiento int[] DEFAULT '{3,7,14}';
+  ADD COLUMN IF NOT EXISTS dias_seguimiento int[] DEFAULT '{3,7,14}',
+  ADD COLUMN IF NOT EXISTS limite_diario int DEFAULT 0;
+  -- limite_diario = 0 significa sin límite
 
 -- Plantillas de email (pitches guardados por sector/caso de uso)
 CREATE TABLE IF NOT EXISTS plantillas (

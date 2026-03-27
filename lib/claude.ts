@@ -27,9 +27,10 @@ function leerSkillEmail(): string | null {
   }
 }
 
-export async function generarDominiosPorSector(sector: string, pais: string, cantidad: number = 15): Promise<string[]> {
-  const prompt = `Lista exactamente ${cantidad} dominios web REALES de empresas del sector "${sector}" en ${pais}.
-Deben ser empresas reales, activas, con web funcional, de distintos tamaños (desde PYME a grande).
+export async function generarDominiosPorSector(sector: string, pais: string, cantidad: number = 15, region?: string): Promise<string[]> {
+  const ubicacion = region ? `${region}, ${pais}` : pais
+  const prompt = `Lista exactamente ${cantidad} dominios web REALES de empresas del sector "${sector}" en ${ubicacion}.
+Deben ser empresas reales, activas, con web funcional, de distintos tamaños (desde PYME a grande).${region ? `\nPrioriza empresas con sede o presencia destacada en ${region}.` : ''}
 Solo el dominio raíz (ej: empresa.es, empresa.com). Sin www, sin https.
 
 Responde SOLO con este JSON:

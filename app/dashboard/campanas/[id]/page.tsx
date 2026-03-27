@@ -44,6 +44,7 @@ export default function DetalleCampanaPage() {
   const [modoBusqueda, setModoBusqueda] = useState<'dominios' | 'sector'>('dominios')
   const [sectorBusqueda, setSectorBusqueda] = useState('')
   const [paisBusqueda, setPaisBusqueda] = useState('España')
+  const [regionBusqueda, setRegionBusqueda] = useState('')
   const [buscandoSector, setBuscandoSector] = useState(false)
   const [dominiosSugeridos, setDominiosSugeridos] = useState<string[]>([])
   const [modoEnvio, setModoEnvio] = useState<'test' | 'real'>('test')
@@ -54,6 +55,8 @@ export default function DetalleCampanaPage() {
   // P2-2 plantillas
   const [plantillas, setPlantillas] = useState<Plantilla[]>([])
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
+  // P2-3 throttling
+  const [limiteDiario, setLimiteDiario] = useState(0)
 
   const cargarCampana = useCallback(async () => {
     const res = await fetch(`/api/campanas/${id}`)
@@ -71,6 +74,7 @@ export default function DetalleCampanaPage() {
       if (data.campana?.sector) setSectorObjetivo(data.campana.sector)
       if (data.campana?.tono) setTono(data.campana.tono as Tono)
       if (data.campana?.dias_seguimiento?.length) setDiasSeguimiento(data.campana.dias_seguimiento)
+      if (data.campana?.limite_diario !== undefined) setLimiteDiario(data.campana.limite_diario)
     }
     setLoading(false)
   }, [id])
@@ -144,7 +148,7 @@ export default function DetalleCampanaPage() {
       const res = await fetch('/api/buscar-por-sector', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sector: sectorBusqueda, pais: paisBusqueda, cantidad: 15 }),
+        body: JSON.stringify({ sector: sectorBusqueda, pais: paisBusqueda, cantidad: 15, region: regionBusqueda || undefined }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -205,6 +209,7 @@ export default function DetalleCampanaPage() {
         sector: sectorObjetivo,
         tono,
         dias_seguimiento: diasSeguimiento,
+        limite_diario: limiteDiario,
       }),
     })
 
@@ -262,9 +267,10 @@ export default function DetalleCampanaPage() {
       if (!res.ok) throw new Error(data.error || 'Error enviando')
 
       await cargarCampana()
+      const cola = data.en_cola > 0 ? ` · ${data.en_cola} en cola para mañana` : ''
       const msg = modoEnvio === 'test'
-        ? `${data.enviados} emails marcados (modo test — sin envío real)`
-        : `${data.enviados} emails enviados${data.errores?.length ? ` · ${data.errores.length} errores` : ''}`
+        ? `${data.enviados} emails marcados (modo test)${cola}`
+        : `${data.enviados} emails enviados${data.errores?.length ? ` · ${data.errores.length} errores` : ''}${cola}`
       setToast({ msg, tipo: data.errores?.length ? 'error' : 'success' })
     } catch (e: unknown) {
       setToast({ msg: (e as Error).message, tipo: 'error' })
@@ -494,11 +500,20 @@ export default function DetalleCampanaPage() {
                         value={sectorBusqueda}
                         onChange={(e) => setSectorBusqueda(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && buscarPorSector()}
-                        placeholder="ej. Ecommerce, SaaS, Consultoría..."
+                        placeholder="ej. Ecommerce, SaaS, Hostelería..."
                         className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
                       />
                     </div>
-                    <div className="w-36">
+                    <div className="w-32">
+                      <label className="block text-xs font-medium text-gray-500 mb-1.5">Región</label>
+                      <input
+                        value={regionBusqueda}
+                        onChange={(e) => setRegionBusqueda(e.target.value)}
+                        placeholder="ej. Asturias"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                      />
+                    </div>
+                    <div className="w-28">
                       <label className="block text-xs font-medium text-gray-500 mb-1.5">País</label>
                       <input
                         value={paisBusqueda}
@@ -535,7 +550,9 @@ export default function DetalleCampanaPage() {
                   {dominiosSugeridos.length > 0 && (
                     <div className="mt-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-medium text-gray-500">{dominiosSugeridos.length} empresas encontradas por IA</p>
+                        <p className="text-xs font-medium text-gray-500">
+                          {dominiosSugeridos.length} empresas — {sectorBusqueda}{regionBusqueda ? ` · ${regionBusqueda}` : ''}
+                        </p>
                         <button
                           onClick={() => setDominiosSugeridos([])}
                           className="text-xs text-gray-400 hover:text-gray-600"
@@ -681,6 +698,26 @@ export default function DetalleCampanaPage() {
                       + añadir
                     </button>
                   )}
+                </div>
+              </div>
+
+              {/* P2-3 límite diario */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Límite diario</label>
+                  <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
+                    <input
+                      type="number"
+                      min={0}
+                      max={500}
+                      value={limiteDiario || ''}
+                      onChange={(e) => setLimiteDiario(parseInt(e.target.value) || 0)}
+                      placeholder="∞"
+                      className="w-12 text-center text-xs font-medium text-gray-700 bg-transparent outline-none"
+                    />
+                    <span className="text-xs text-gray-400">emails/día</span>
+                  </div>
+                  <span className="text-xs text-gray-400">{limiteDiario === 0 ? 'Sin límite' : `Máx. ${limiteDiario} por día`}</span>
                 </div>
               </div>
 

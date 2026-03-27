@@ -18,14 +18,40 @@ export async function POST(request: Request) {
 
   // Datos de la campaña y del perfil
   const [{ data: campana }, { data: perfil }] = await Promise.all([
-    supabase.from('campanas').select('dias_seguimiento').eq('id', campana_id).single(),
+    supabase.from('campanas').select('dias_seguimiento, limite_diario').eq('id', campana_id).single(),
     supabase.from('perfiles').select('nombre, agencia').eq('id', user.id).single(),
   ])
 
   const nombreRemitente = perfil?.agencia || perfil?.nombre || undefined
+  const limiteDiario: number = campana?.limite_diario || 0
+
+  // P2-3: Comprobar cuántos emails se han enviado hoy para esta campaña
+  let yaEnviadosHoy = 0
+  if (limiteDiario > 0) {
+    const inicioHoy = new Date()
+    inicioHoy.setHours(0, 0, 0, 0)
+    const { count } = await supabase
+      .from('contactos')
+      .select('id', { count: 'exact', head: true })
+      .eq('campana_id', campana_id)
+      .eq('user_id', user.id)
+      .in('estado', ['enviado', 'abierto', 'respondido'])
+      .gte('fecha_envio', inicioHoy.toISOString())
+
+    yaEnviadosHoy = count || 0
+
+    if (yaEnviadosHoy >= limiteDiario) {
+      return NextResponse.json({
+        error: `Límite diario alcanzado (${limiteDiario} emails/día). Ya enviados hoy: ${yaEnviadosHoy}.`,
+        limite_diario: limiteDiario,
+        ya_enviados_hoy: yaEnviadosHoy,
+        disponibles_hoy: 0,
+      }, { status: 429 })
+    }
+  }
 
   // Solo contactos pendientes que ya tienen email generado
-  const { data: contactos } = await supabase
+  const { data: todosContactos } = await supabase
     .from('contactos')
     .select('*')
     .eq('campana_id', campana_id)
@@ -33,9 +59,14 @@ export async function POST(request: Request) {
     .eq('estado', 'pendiente')
     .not('email_generado', 'is', null)
 
-  if (!contactos || contactos.length === 0) {
+  if (!todosContactos || todosContactos.length === 0) {
     return NextResponse.json({ error: 'No hay contactos pendientes con email generado' }, { status: 404 })
   }
+
+  // Aplicar throttling: solo enviar hasta el límite restante del día
+  const disponiblesHoy = limiteDiario > 0 ? limiteDiario - yaEnviadosHoy : todosContactos.length
+  const contactos = (todosContactos as Contacto[]).slice(0, disponiblesHoy)
+  const enCola = todosContactos.length - contactos.length
 
   const sinEmail = (await supabase
     .from('contactos')
@@ -49,7 +80,7 @@ export async function POST(request: Request) {
   const errores: string[] = []
   let enviados = 0
 
-  for (const contacto of contactos as Contacto[]) {
+  for (const contacto of contactos) {
     await sleep(modo === 'real' ? 300 : 50)
 
     if (modo === 'real') {
@@ -63,7 +94,6 @@ export async function POST(request: Request) {
 
       if (resultado.error) {
         errores.push(`${contacto.email}: ${resultado.error}`)
-        // Marcar como error para no reintentar
         await supabase
           .from('contactos')
           .update({ estado: 'error' })
@@ -72,13 +102,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // Marcar como enviado
     const { error } = await supabase
       .from('contactos')
-      .update({
-        estado: 'enviado',
-        fecha_envio: new Date().toISOString(),
-      })
+      .update({ estado: 'enviado', fecha_envio: new Date().toISOString() })
       .eq('id', contacto.id)
 
     if (error) {
@@ -86,7 +112,6 @@ export async function POST(request: Request) {
       continue
     }
 
-    // Registrar en historial
     await supabase
       .from('historial_contactos')
       .upsert({
@@ -97,7 +122,6 @@ export async function POST(request: Request) {
         total_contactos: 1,
       }, { onConflict: 'user_id,email' })
 
-    // Programar seguimientos usando días configurados en la campaña
     const diasSeguimiento: number[] = campana?.dias_seguimiento?.length
       ? campana.dias_seguimiento
       : [3, 7, 14]
@@ -115,7 +139,6 @@ export async function POST(request: Request) {
     enviados++
   }
 
-  // Actualizar stats de la campaña
   await supabase
     .from('campanas')
     .update({
@@ -127,8 +150,11 @@ export async function POST(request: Request) {
   return NextResponse.json({
     enviados,
     errores,
-    total_contactos: contactos.length,
+    total_contactos: todosContactos.length,
     sin_email_generado: sinEmail,
+    en_cola: enCola,
+    limite_diario: limiteDiario,
+    ya_enviados_hoy: yaEnviadosHoy + enviados,
     modo,
   })
 }

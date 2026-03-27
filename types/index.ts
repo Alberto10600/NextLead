@@ -52,6 +52,7 @@ export interface Campana {
   total_respondidos: number
   tono?: Tono
   dias_seguimiento?: number[]
+  limite_diario?: number
   created_at: string
   updated_at: string
 }
