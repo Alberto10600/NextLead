@@ -76,6 +76,7 @@ type HunterEmailRaw = {
 async function fetchPagina(
   dominio: string,
   offset: number,
+  limit = PAGE_SIZE,
 ): Promise<{ emails: HunterContacto[]; total: number }> {
   const key = API_KEY()
   if (!key) throw new Error('HUNTER_API_KEY no configurada en .env.local')
@@ -83,29 +84,37 @@ async function fetchPagina(
   const params = new URLSearchParams({
     domain:  dominio,
     api_key: key,
-    limit:   String(PAGE_SIZE),
+    limit:   String(limit),
     offset:  String(offset),
   })
 
   let intentos = 0
   while (intentos < 3) {
     const res = await fetch(`${HUNTER_BASE}/domain-search?${params.toString()}`)
+
     if (res.status === 429) {
       await sleep(2000 * (intentos + 1))
       intentos++
       continue
     }
-    if (!res.ok) {
-      const txt = await res.text()
-      console.error(`[Hunter] domain-search ${dominio} offset=${offset} → ${res.status}: ${txt.slice(0, 200)}`)
+
+    const text = await res.text()
+    let data: { data?: { organization?: string; emails?: HunterEmailRaw[] }; meta?: { results?: number }; errors?: { id: string }[] }
+    try { data = JSON.parse(text) } catch { return { emails: [], total: 0 } }
+
+    // Plan gratuito: limit=100 rechazado con 400 pagination_error → reintentar con limit=10
+    if (res.status === 400 && data.errors?.some(e => e.id === 'pagination_error')) {
+      if (limit > 10) {
+        console.log(`[Hunter] plan gratuito detectado, reintentando con limit=10`)
+        return fetchPagina(dominio, offset, 10)
+      }
       return { emails: [], total: 0 }
     }
 
-    const text = await res.text()
-    console.log(`[Hunter] domain-search ${dominio} offset=${offset} → raw:`, text.slice(0, 1000))
-
-    let data: { data?: { organization?: string; emails?: HunterEmailRaw[] }; meta?: { results?: number } }
-    try { data = JSON.parse(text) } catch { return { emails: [], total: 0 } }
+    if (!res.ok) {
+      console.error(`[Hunter] domain-search ${dominio} → ${res.status}: ${text.slice(0, 200)}`)
+      return { emails: [], total: 0 }
+    }
 
     const empresa: string = data.data?.organization || dominio
     const total: number = data.meta?.results ?? data.data?.emails?.length ?? 0
@@ -118,7 +127,7 @@ async function fetchPagina(
       empresa,
       dominio,
     }))
-    console.log(`[Hunter] parsed → ${emails.length} emails, total: ${total}`)
+    console.log(`[Hunter] ${dominio} offset=${offset} → ${emails.length} emails (total: ${total})`)
     return { emails, total }
   }
   return { emails: [], total: 0 }
