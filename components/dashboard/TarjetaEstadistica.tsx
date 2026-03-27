@@ -7,16 +7,16 @@ interface TarjetaEstadisticaProps {
 
 export default function TarjetaEstadistica({ titulo, valor, subtitulo, icono }: TarjetaEstadisticaProps) {
   return (
-    <div className="group relative bg-[#0D1321] border border-white/5 rounded-xl p-5 overflow-hidden transition-all duration-200 hover:border-white/10 hover:bg-[#141d2e]">
+    <div className="group relative bg-white border border-gray-200 rounded-xl p-5 overflow-hidden transition-all duration-200 hover:border-gray-200 hover:bg-[#141d2e]">
       {/* Subtle gradient top accent */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-600">{titulo}</p>
-          <p className="text-3xl font-bold text-white tracking-tight leading-none mt-1">{valor}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">{titulo}</p>
+          <p className="text-3xl font-bold text-gray-900 tracking-tight leading-none mt-1">{valor}</p>
           {subtitulo && (
-            <p className="text-xs text-slate-500 mt-1.5 tracking-tight">{subtitulo}</p>
+            <p className="text-xs text-gray-400 mt-1.5 tracking-tight">{subtitulo}</p>
           )}
         </div>
         {icono && (

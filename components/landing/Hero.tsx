@@ -32,7 +32,7 @@ export default function Hero() {
         </h1>
 
         {/* Subheadline */}
-        <p className="text-lg text-slate-400 max-w-xl mx-auto leading-relaxed">
+        <p className="text-lg text-gray-500 max-w-xl mx-auto leading-relaxed">
           NextLead descubre contactos cualificados en tu sector, genera emails hiperpersonalizados con IA
           y gestiona seguimientos automáticos — para que tu pipeline nunca se detenga.
         </p>
@@ -50,13 +50,13 @@ export default function Hero() {
           </Link>
           <Link
             href="/precios"
-            className="inline-flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-slate-100 font-medium px-6 py-3 rounded-lg transition-all duration-150 text-sm"
+            className="inline-flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] border border-gray-200 text-gray-700 hover:text-gray-900 font-medium px-6 py-3 rounded-lg transition-all duration-150 text-sm"
           >
             Ver planes
           </Link>
         </div>
 
-        <p className="text-xs text-slate-600 pt-1">
+        <p className="text-xs text-gray-400 pt-1">
           Sin tarjeta de crédito · Plan Free para siempre
         </p>
       </div>

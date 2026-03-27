@@ -3,17 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary:    #070B14;
-  --bg-surface:    #0D1321;
-  --bg-hover:      #131C2E;
-  --border:        rgba(255,255,255,0.06);
+  --bg-primary:    #f9fafb;
+  --bg-surface:    #ffffff;
+  --border:        #e5e7eb;
   --accent:        #6366f1;
-  --accent-hover:  #818cf8;
-  --text-primary:  #f1f5f9;
-  --text-muted:    #94a3b8;
-  --success:       #22c55e;
-  --error:         #ef4444;
-  --warning:       #f59e0b;
+  --accent-hover:  #4f46e5;
+  --text-primary:  #111827;
+  --text-muted:    #6b7280;
 }
 
 * {
@@ -21,15 +17,15 @@
 }
 
 body {
-  background-color: #070B14;
-  color: var(--text-primary);
+  background-color: #f9fafb;
+  color: #111827;
   -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #070B14; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+::-webkit-scrollbar-track { background: #f3f4f6; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
 @keyframes slide-in-from-bottom-4 {
   from { transform: translateY(16px); opacity: 0; }

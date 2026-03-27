@@ -17,25 +17,25 @@ const estadoBadge: Record<Contacto['estado'], 'default' | 'success' | 'warning' 
 
 export default function TarjetaContacto({ contacto }: TarjetaContactoProps) {
   return (
-    <div className="bg-[#0D1321] border border-white/[0.06] rounded-lg p-4 space-y-2">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-2">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-200">
+          <p className="text-sm font-medium text-gray-800">
             {[contacto.nombre, contacto.apellido].filter(Boolean).join(' ') || contacto.email}
           </p>
-          <p className="text-xs text-slate-400">{contacto.cargo} · {contacto.empresa}</p>
+          <p className="text-xs text-gray-500">{contacto.cargo} · {contacto.empresa}</p>
         </div>
         <Badge variant={estadoBadge[contacto.estado]}>{contacto.estado}</Badge>
       </div>
 
-      <p className="text-xs text-slate-500 font-mono">{contacto.email}</p>
+      <p className="text-xs text-gray-400 font-mono">{contacto.email}</p>
 
       {contacto.asunto_generado && (
-        <p className="text-xs text-slate-400 italic truncate">"{contacto.asunto_generado}"</p>
+        <p className="text-xs text-gray-500 italic truncate">"{contacto.asunto_generado}"</p>
       )}
 
       {contacto.fecha_envio && (
-        <p className="text-xs text-slate-600">Enviado: {formatearFecha(contacto.fecha_envio)}</p>
+        <p className="text-xs text-gray-400">Enviado: {formatearFecha(contacto.fecha_envio)}</p>
       )}
     </div>
   )

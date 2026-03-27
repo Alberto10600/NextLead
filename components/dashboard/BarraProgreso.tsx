@@ -11,7 +11,7 @@ interface BarraProgresoProps {
 
 export default function BarraProgreso({ fases, progreso }: BarraProgresoProps) {
   return (
-    <div className="bg-[#0D1321] border border-white/[0.06] rounded-lg p-6">
+    <div className="bg-white border border-gray-200 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         {fases.map((fase, i) => (
           <div key={i} className="flex items-center flex-1">
@@ -20,16 +20,16 @@ export default function BarraProgreso({ fases, progreso }: BarraProgresoProps) {
                 className={`
                   w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
                   transition-all duration-300
-                  ${fase.completada ? 'bg-green-600 text-white' :
-                    fase.activa ? 'bg-blue-600 text-white animate-pulse' :
-                    'bg-[#334155] text-slate-500'}
+                  ${fase.completada ? 'bg-green-600 text-gray-900' :
+                    fase.activa ? 'bg-blue-600 text-gray-900 animate-pulse' :
+                    'bg-[#334155] text-gray-400'}
                 `}
               >
                 {fase.completada ? '✓' : i + 1}
               </div>
               <span className={`text-xs mt-1 text-center max-w-[80px] leading-tight
                 ${fase.activa ? 'text-blue-400' :
-                  fase.completada ? 'text-green-400' : 'text-slate-500'}
+                  fase.completada ? 'text-green-400' : 'text-gray-400'}
               `}>
                 {fase.label}
               </span>
@@ -45,7 +45,7 @@ export default function BarraProgreso({ fases, progreso }: BarraProgresoProps) {
 
       {progreso && (
         <div className="mt-2">
-          <div className="flex justify-between text-xs text-slate-400 mb-1">
+          <div className="flex justify-between text-xs text-gray-500 mb-1">
             <span>{progreso.mensaje || `Procesando ${progreso.actual} de ${progreso.total}...`}</span>
             <span>{Math.round((progreso.actual / progreso.total) * 100)}%</span>
           </div>

@@ -21,13 +21,13 @@ export default async function ContactosPage() {
 
       <div className="p-6">
         <div className="mb-4">
-          <p className="text-sm text-slate-400">{(contactos || []).length} contactos en total</p>
+          <p className="text-sm text-gray-500">{(contactos || []).length} contactos en total</p>
         </div>
 
         {contactos && contactos.length > 0 ? (
           <TablaContactos contactos={contactos as Contacto[]} />
         ) : (
-          <div className="bg-[#0D1321] border border-white/[0.06] rounded-lg p-12 text-center text-slate-400">
+          <div className="bg-white border border-gray-200 rounded-lg p-12 text-center text-gray-500">
             Aún no tienes contactos. Crea una campaña para empezar.
           </div>
         )}

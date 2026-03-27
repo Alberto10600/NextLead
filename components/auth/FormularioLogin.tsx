@@ -35,7 +35,7 @@ export default function FormularioLogin() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-slate-400 tracking-wide">
+        <label className="text-xs font-medium text-gray-500 tracking-wide">
           Email
         </label>
         <input
@@ -44,12 +44,12 @@ export default function FormularioLogin() {
           value={form.email}
           onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
           required
-          className="bg-[#070B14] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 outline-none transition-all duration-150 focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40"
+          className="bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-150 focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40"
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-slate-400 tracking-wide">
+        <label className="text-xs font-medium text-gray-500 tracking-wide">
           Contraseña
         </label>
         <input
@@ -58,7 +58,7 @@ export default function FormularioLogin() {
           value={form.password}
           onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
           required
-          className="bg-[#070B14] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 outline-none transition-all duration-150 focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40"
+          className="bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-150 focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40"
         />
       </div>
 
@@ -89,7 +89,7 @@ export default function FormularioLogin() {
         )}
       </button>
 
-      <p className="text-sm text-center text-slate-500 pt-1">
+      <p className="text-sm text-center text-gray-400 pt-1">
         ¿Sin cuenta?{' '}
         <Link href="/registro" className="text-indigo-400 hover:text-indigo-300 transition-colors">
           Regístrate gratis

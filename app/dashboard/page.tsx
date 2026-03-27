@@ -65,8 +65,8 @@ export default async function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-semibold tracking-tight text-slate-100">Últimas campañas</h2>
-              <p className="text-xs text-slate-600 mt-0.5">Tus 5 campañas más recientes</p>
+              <h2 className="text-sm font-semibold tracking-tight text-gray-900">Últimas campañas</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Tus 5 campañas más recientes</p>
             </div>
             <Link
               href="/dashboard/campanas/nueva"
@@ -80,58 +80,58 @@ export default async function DashboardPage() {
           </div>
 
           {listaCampanas.length === 0 ? (
-            <div className="bg-[#0D1321] border border-white/[0.06] rounded-xl p-14 text-center">
+            <div className="bg-white border border-gray-200 rounded-xl p-14 text-center">
               <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-4">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-400">
                   <path d="M3 11l19-9-9 19-2-8-8-2z"/>
                 </svg>
               </div>
-              <p className="text-sm font-medium text-slate-400 mb-1">Aún no tienes campañas</p>
-              <p className="text-xs text-slate-600 mb-5">Crea tu primera campaña para empezar a enviar emails</p>
+              <p className="text-sm font-medium text-gray-500 mb-1">Aún no tienes campañas</p>
+              <p className="text-xs text-gray-400 mb-5">Crea tu primera campaña para empezar a enviar emails</p>
               <Link
                 href="/dashboard/campanas/nueva"
-                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors duration-150 ring-1 ring-indigo-500/40"
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-gray-900 text-xs font-medium px-4 py-2 rounded-lg transition-colors duration-150 ring-1 ring-indigo-500/40"
               >
                 Crear primera campaña
               </Link>
             </div>
           ) : (
-            <div className="bg-[#0D1321] border border-white/[0.06] rounded-xl overflow-hidden">
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06]">
-                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Nombre</th>
-                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Sector</th>
-                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Estado</th>
-                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Enviados</th>
-                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Fecha</th>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Nombre</th>
+                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Sector</th>
+                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Estado</th>
+                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Enviados</th>
+                    <th className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Fecha</th>
                   </tr>
                 </thead>
                 <tbody>
                   {listaCampanas.map((c, i) => (
                     <tr
                       key={c.id}
-                      className={`group transition-colors duration-100 hover:bg-white/[0.03] ${i < listaCampanas.length - 1 ? 'border-b border-white/[0.06]' : ''}`}
+                      className={`group transition-colors duration-100 hover:bg-gray-50 ${i < listaCampanas.length - 1 ? 'border-b border-gray-200' : ''}`}
                     >
                       <td className="px-5 py-3.5">
                         <Link
                           href={`/dashboard/campanas/${c.id}`}
-                          className="text-slate-200 hover:text-indigo-400 transition-colors duration-150 font-medium tracking-tight text-sm"
+                          className="text-gray-800 hover:text-indigo-400 transition-colors duration-150 font-medium tracking-tight text-sm"
                         >
                           {c.nombre}
                         </Link>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-slate-500 text-xs tracking-tight">{c.sector}</span>
+                        <span className="text-gray-400 text-xs tracking-tight">{c.sector}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <Badge variant={estadoBadge[c.estado] || 'default'}>{c.estado}</Badge>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-slate-400 text-sm tabular-nums">{c.total_enviados}</span>
+                        <span className="text-gray-500 text-sm tabular-nums">{c.total_enviados}</span>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-slate-600 text-xs tracking-tight">{formatearFecha(c.created_at)}</span>
+                        <span className="text-gray-400 text-xs tracking-tight">{formatearFecha(c.created_at)}</span>
                       </td>
                     </tr>
                   ))}

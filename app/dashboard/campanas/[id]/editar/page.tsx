@@ -45,12 +45,12 @@ export default function EditarCampanaPage() {
 
   return (
     <div>
-      <div className="h-14 border-b border-white/[0.06] bg-[#0D1321] px-6 flex items-center gap-3">
-        <Link href={`/dashboard/campanas/${id}`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+      <div className="h-14 border-b border-gray-200 bg-white px-6 flex items-center gap-3">
+        <Link href={`/dashboard/campanas/${id}`} className="text-gray-400 hover:text-gray-700 text-sm transition-colors">
           ← Volver
         </Link>
-        <span className="text-slate-700">/</span>
-        <h1 className="text-sm font-semibold text-slate-200">Editar campaña</h1>
+        <span className="text-gray-600">/</span>
+        <h1 className="text-sm font-semibold text-gray-800">Editar campaña</h1>
       </div>
 
       <div className="p-6 max-w-md">

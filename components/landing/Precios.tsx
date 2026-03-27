@@ -7,10 +7,10 @@ import type { Plan } from '@/types'
 import Button from '@/components/ui/Button'
 
 const PLANES: { plan: Plan; nombre: string; color: string; destacado?: boolean }[] = [
-  { plan: 'free',     nombre: 'Free',     color: 'border-white/[0.06]' },
-  { plan: 'starter',  nombre: 'Starter',  color: 'border-white/[0.06]' },
+  { plan: 'free',     nombre: 'Free',     color: 'border-gray-200' },
+  { plan: 'starter',  nombre: 'Starter',  color: 'border-gray-200' },
   { plan: 'pro',      nombre: 'Pro',      color: 'border-blue-500', destacado: true },
-  { plan: 'business', nombre: 'Business', color: 'border-white/[0.06]' },
+  { plan: 'business', nombre: 'Business', color: 'border-gray-200' },
 ]
 
 interface PreciosProps {
@@ -48,8 +48,8 @@ export default function Precios({ planActual }: PreciosProps) {
     <section className="px-6 py-20" id="precios">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-2xl font-bold text-slate-100 mb-2">Planes simples y transparentes</h2>
-          <p className="text-slate-400">Sin sorpresas. Cancela cuando quieras.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Planes simples y transparentes</h2>
+          <p className="text-gray-500">Sin sorpresas. Cancela cuando quieras.</p>
         </div>
 
         <div className="grid md:grid-cols-4 gap-4">
@@ -61,7 +61,7 @@ export default function Precios({ planActual }: PreciosProps) {
               <div
                 key={plan}
                 className={`
-                  relative bg-[#0D1321] border-2 rounded-lg p-6 flex flex-col gap-4
+                  relative bg-white border-2 rounded-lg p-6 flex flex-col gap-4
                   ${color}
                   ${destacado ? 'shadow-lg shadow-blue-500/10' : ''}
                 `}
@@ -75,26 +75,26 @@ export default function Precios({ planActual }: PreciosProps) {
                 )}
 
                 <div>
-                  <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">{nombre}</p>
+                  <p className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{nombre}</p>
                   <div className="mt-2 flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-slate-100">
+                    <span className="text-3xl font-bold text-gray-900">
                       {limite.precio_mensual === 0 ? 'Gratis' : `€${limite.precio_mensual}`}
                     </span>
-                    {limite.precio_mensual > 0 && <span className="text-slate-400 text-sm">/mes</span>}
+                    {limite.precio_mensual > 0 && <span className="text-gray-500 text-sm">/mes</span>}
                   </div>
                 </div>
 
                 <ul className="space-y-2 flex-1 text-sm">
-                  <li className="flex items-center gap-2 text-slate-300">
+                  <li className="flex items-center gap-2 text-gray-700">
                     <span className="text-green-400">✓</span>
                     {limite.contactos_mes.toLocaleString()} contactos/mes
                   </li>
-                  <li className="flex items-center gap-2 text-slate-300">
+                  <li className="flex items-center gap-2 text-gray-700">
                     <span className="text-green-400">✓</span>
                     {limite.campanas_activas === 999 ? 'Campañas ilimitadas' : `${limite.campanas_activas} campaña${limite.campanas_activas > 1 ? 's' : ''} activa${limite.campanas_activas > 1 ? 's' : ''}`}
                   </li>
-                  <li className="flex items-center gap-2 text-slate-300">
-                    <span className={limite.seguimientos > 0 ? 'text-green-400' : 'text-slate-600'}>
+                  <li className="flex items-center gap-2 text-gray-700">
+                    <span className={limite.seguimientos > 0 ? 'text-green-400' : 'text-gray-400'}>
                       {limite.seguimientos > 0 ? '✓' : '✗'}
                     </span>
                     {limite.seguimientos > 0 ? `${limite.seguimientos} follow-ups auto` : 'Sin follow-ups'}

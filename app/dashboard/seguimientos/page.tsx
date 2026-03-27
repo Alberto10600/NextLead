@@ -55,9 +55,9 @@ export default function SeguimientosPage() {
 
   return (
     <div>
-      <div className="h-14 border-b border-white/[0.06] bg-[#0D1321] px-6 flex items-center justify-between">
+      <div className="h-14 border-b border-gray-200 bg-white px-6 flex items-center justify-between">
         <div>
-          <h1 className="text-base font-semibold text-slate-200">Seguimientos</h1>
+          <h1 className="text-base font-semibold text-gray-800">Seguimientos</h1>
         </div>
         <div className="flex items-center gap-3">
           {pendientes.length > 0 && (
@@ -71,39 +71,39 @@ export default function SeguimientosPage() {
 
       <div className="p-6">
         {loading ? (
-          <div className="text-center py-12 text-slate-500">Cargando...</div>
+          <div className="text-center py-12 text-gray-400">Cargando...</div>
         ) : seguimientos.length === 0 ? (
-          <div className="bg-[#0D1321] border border-white/[0.06] rounded-lg p-12 text-center text-slate-400">
+          <div className="bg-white border border-gray-200 rounded-lg p-12 text-center text-gray-500">
             No hay seguimientos programados. Se crean automáticamente al enviar una campaña.
           </div>
         ) : (
-          <div className="bg-[#0D1321] border border-white/[0.06] rounded-lg overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06]">
-                  <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Contacto</th>
-                  <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Empresa</th>
-                  <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">#</th>
-                  <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Estado</th>
-                  <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Programado</th>
-                  <th className="text-left px-4 py-3 text-xs text-slate-400 font-medium">Enviado</th>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium">Contacto</th>
+                  <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium">Empresa</th>
+                  <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium">#</th>
+                  <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium">Estado</th>
+                  <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium">Programado</th>
+                  <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium">Enviado</th>
                 </tr>
               </thead>
               <tbody>
                 {seguimientos.map((s) => (
-                  <tr key={s.id} className="border-b border-white/[0.06] hover:bg-[#334155]/30 transition-colors">
-                    <td className="px-4 py-3 text-slate-300">
+                  <tr key={s.id} className="border-b border-gray-200 hover:bg-[#334155]/30 transition-colors">
+                    <td className="px-4 py-3 text-gray-700">
                       {s.contactos
                         ? `${s.contactos.nombre || ''} ${s.contactos.apellido || ''}`.trim() || s.contactos.email
                         : '—'}
                     </td>
-                    <td className="px-4 py-3 text-slate-400">{s.contactos?.empresa || '—'}</td>
-                    <td className="px-4 py-3 text-slate-400">#{s.numero_seguimiento}</td>
+                    <td className="px-4 py-3 text-gray-500">{s.contactos?.empresa || '—'}</td>
+                    <td className="px-4 py-3 text-gray-500">#{s.numero_seguimiento}</td>
                     <td className="px-4 py-3">
                       <Badge variant={estadoBadge[s.estado] || 'default'}>{s.estado}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-slate-400">{formatearFecha(s.fecha_programada)}</td>
-                    <td className="px-4 py-3 text-slate-500">
+                    <td className="px-4 py-3 text-gray-500">{formatearFecha(s.fecha_programada)}</td>
+                    <td className="px-4 py-3 text-gray-400">
                       {s.fecha_enviado ? formatearFecha(s.fecha_enviado) : '—'}
                     </td>
                   </tr>

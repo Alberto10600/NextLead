@@ -4,16 +4,16 @@ import Features from '@/components/landing/Features'
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#070B14]">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b border-white/[0.06] px-6 py-4 sticky top-0 z-50 backdrop-blur-sm bg-[#070B14]/80">
+      <header className="border-b border-gray-200 px-6 py-4 sticky top-0 z-50 backdrop-blur-sm bg-gray-50/80">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="text-xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">Next</span>
-            <span className="text-slate-100">Lead</span>
+            <span className="text-gray-900">Lead</span>
           </Link>
           <nav className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-slate-400 hover:text-slate-100 transition-colors duration-150">
+            <Link href="/login" className="text-sm text-gray-500 hover:text-gray-900 transition-colors duration-150">
               Iniciar sesión
             </Link>
             <Link
@@ -31,9 +31,9 @@ export default function LandingPage() {
         <Features />
       </main>
 
-      <footer className="border-t border-white/[0.06] px-6 py-8 mt-12">
+      <footer className="border-t border-gray-200 px-6 py-8 mt-12">
         <div className="max-w-5xl mx-auto text-center">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-gray-400">
             NextLead · Powered by Claude AI
           </p>
         </div>

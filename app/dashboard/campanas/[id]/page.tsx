@@ -12,11 +12,11 @@ import Spinner from '@/components/ui/Spinner'
 type Fase = 'idle' | 'buscando' | 'listo' | 'enviando' | 'completado'
 
 const estadoStyles: Record<string, { bg: string; text: string; label: string }> = {
-  borrador:   { bg: 'bg-slate-800', text: 'text-slate-400', label: 'Borrador' },
+  borrador:   { bg: 'bg-slate-800', text: 'text-gray-500', label: 'Borrador' },
   procesando: { bg: 'bg-blue-950', text: 'text-blue-400', label: 'Procesando' },
   activa:     { bg: 'bg-emerald-950', text: 'text-emerald-400', label: 'Activa' },
   pausada:    { bg: 'bg-amber-950', text: 'text-amber-400', label: 'Pausada' },
-  completada: { bg: 'bg-slate-800', text: 'text-slate-400', label: 'Completada' },
+  completada: { bg: 'bg-slate-800', text: 'text-gray-500', label: 'Completada' },
 }
 
 function parseDominios(texto: string): string[] {
@@ -127,7 +127,7 @@ export default function DetalleCampanaPage() {
   if (!campana) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <p className="text-slate-300 font-medium mb-1">Campaña no encontrada</p>
+        <p className="text-gray-700 font-medium mb-1">Campaña no encontrada</p>
         <Link href="/dashboard/campanas" className="text-sm text-blue-400 hover:text-blue-300 transition-colors mt-4">
           ← Volver a campañas
         </Link>
@@ -143,15 +143,15 @@ export default function DetalleCampanaPage() {
   return (
     <div className="min-h-full">
       {/* Top bar */}
-      <div className="border-b border-white/5 bg-[#0D1321] px-6 py-4 flex items-center justify-between gap-4">
+      <div className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 min-w-0">
-          <Link href="/dashboard/campanas" className="text-slate-500 hover:text-slate-300 text-sm transition-colors shrink-0">
+          <Link href="/dashboard/campanas" className="text-gray-400 hover:text-gray-700 text-sm transition-colors shrink-0">
             Campañas
           </Link>
-          <svg className="w-3.5 h-3.5 text-slate-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-          <h1 className="text-sm font-semibold text-white truncate">{campana.nombre}</h1>
+          <h1 className="text-sm font-semibold text-gray-900 truncate">{campana.nombre}</h1>
           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${badge.bg} ${badge.text}`}>
             {badge.label}
           </span>
@@ -159,7 +159,7 @@ export default function DetalleCampanaPage() {
 
         <div className="flex items-center gap-2 shrink-0">
           {enProceso && (
-            <div className="flex items-center gap-2 text-sm text-slate-400 mr-1">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mr-1">
               <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -171,7 +171,7 @@ export default function DetalleCampanaPage() {
             <button
               onClick={buscarContactos}
               disabled={dominiosParsed.length === 0}
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-gray-900 text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
             >
               Buscar contactos
             </button>
@@ -179,7 +179,7 @@ export default function DetalleCampanaPage() {
           {fase === 'listo' && contactosPendientes.length > 0 && (
             <button
               onClick={marcarEnviados}
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-gray-900 text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
             >
               Marcar enviados
               <span className="bg-blue-500 text-blue-100 text-xs px-1.5 py-0.5 rounded-full">
@@ -193,36 +193,36 @@ export default function DetalleCampanaPage() {
       <div className="p-6 space-y-6">
         {/* Metrics row */}
         <div className="grid grid-cols-4 gap-3">
-          <div className="bg-[#0D1321] border border-white/5 rounded-lg px-4 py-3">
-            <p className="text-xs text-slate-500 mb-1">Sector</p>
-            <p className="text-sm font-medium text-slate-200 truncate">{campana.sector || '—'}</p>
+          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+            <p className="text-xs text-gray-400 mb-1">Sector</p>
+            <p className="text-sm font-medium text-gray-800 truncate">{campana.sector || '—'}</p>
           </div>
-          <div className="bg-[#0D1321] border border-white/5 rounded-lg px-4 py-3">
-            <p className="text-xs text-slate-500 mb-1">País</p>
-            <p className="text-sm font-medium text-slate-200">
+          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+            <p className="text-xs text-gray-400 mb-1">País</p>
+            <p className="text-sm font-medium text-gray-800">
               {PAISES_HUNTER.find((p) => p.value === campana.pais)?.label || campana.pais || '—'}
             </p>
           </div>
-          <div className="bg-[#0D1321] border border-white/5 rounded-lg px-4 py-3">
-            <p className="text-xs text-slate-500 mb-1">Dominios</p>
-            <p className="text-sm font-medium text-slate-200 tabular-nums">
+          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+            <p className="text-xs text-gray-400 mb-1">Dominios</p>
+            <p className="text-sm font-medium text-gray-800 tabular-nums">
               {dominiosParsed.length > 0 ? dominiosParsed.length : '—'}
             </p>
           </div>
-          <div className="bg-[#0D1321] border border-white/5 rounded-lg px-4 py-3">
-            <p className="text-xs text-slate-500 mb-1">Contactos</p>
-            <p className="text-sm font-medium text-slate-200 tabular-nums">{contactos.length}</p>
+          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+            <p className="text-xs text-gray-400 mb-1">Contactos</p>
+            <p className="text-sm font-medium text-gray-800 tabular-nums">{contactos.length}</p>
           </div>
         </div>
 
         {/* Domain input + filter summary */}
         {(fase === 'idle' || fase === 'buscando') && contactos.length === 0 && (
           <div className="grid grid-cols-3 gap-6">
-            <div className="col-span-2 bg-[#0D1321] border border-white/5 rounded-lg p-5">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+            <div className="col-span-2 bg-white border border-gray-200 rounded-lg p-5">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
                 Dominios objetivo
               </p>
-              <p className="text-xs text-slate-600 mb-3">
+              <p className="text-xs text-gray-400 mb-3">
                 Pega los dominios de las empresas a prospectar. Uno por línea, o separados por comas.
               </p>
               <textarea
@@ -231,24 +231,24 @@ export default function DetalleCampanaPage() {
                 placeholder={'stripe.com\nshopify.com\nvercel.com'}
                 rows={8}
                 disabled={enProceso}
-                className="w-full bg-[#070B14] border border-white/8 rounded-lg px-3 py-2.5 text-sm text-slate-300 placeholder:text-slate-700 font-mono outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40 resize-none transition-all duration-150 disabled:opacity-50"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 placeholder:text-gray-600 font-mono outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40 resize-none transition-all duration-150 disabled:opacity-50"
               />
               {dominiosParsed.length > 0 && (
-                <p className="text-xs text-slate-600 mt-2">
+                <p className="text-xs text-gray-400 mt-2">
                   {dominiosParsed.length} dominio{dominiosParsed.length !== 1 ? 's' : ''} detectado{dominiosParsed.length !== 1 ? 's' : ''}
                 </p>
               )}
             </div>
 
             {filtros && (
-              <div className="bg-[#0D1321] border border-white/5 rounded-lg p-5">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-5">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
                   Filtros de contacto
                 </p>
                 <div className="space-y-4 text-sm">
                   {filtros.departamentos?.length > 0 && (
                     <div>
-                      <p className="text-xs text-slate-600 mb-1.5">Departamentos</p>
+                      <p className="text-xs text-gray-400 mb-1.5">Departamentos</p>
                       <div className="flex flex-wrap gap-1">
                         {filtros.departamentos.map((d) => (
                           <span key={d} className="bg-blue-600/15 border border-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded-full">
@@ -260,7 +260,7 @@ export default function DetalleCampanaPage() {
                   )}
                   {filtros.seniority?.length > 0 && (
                     <div>
-                      <p className="text-xs text-slate-600 mb-1.5">Seniority</p>
+                      <p className="text-xs text-gray-400 mb-1.5">Seniority</p>
                       <div className="flex flex-wrap gap-1">
                         {filtros.seniority.map((s) => (
                           <span key={s} className="bg-violet-600/15 border border-violet-500/20 text-violet-400 text-xs px-2 py-0.5 rounded-full">
@@ -272,10 +272,10 @@ export default function DetalleCampanaPage() {
                   )}
                   {filtros.tamanos?.length > 0 && (
                     <div>
-                      <p className="text-xs text-slate-600 mb-1.5">Tamaños</p>
+                      <p className="text-xs text-gray-400 mb-1.5">Tamaños</p>
                       <div className="flex flex-wrap gap-1">
                         {filtros.tamanos.map((t) => (
-                          <span key={t} className="bg-white/5 border border-white/10 text-slate-400 text-xs px-2 py-0.5 rounded-full">
+                          <span key={t} className="bg-white/5 border border-gray-200 text-gray-500 text-xs px-2 py-0.5 rounded-full">
                             {t}
                           </span>
                         ))}
@@ -290,8 +290,8 @@ export default function DetalleCampanaPage() {
 
         {/* Results summary */}
         {contactos.length > 0 && (
-          <p className="text-sm text-slate-400">
-            <span className="text-slate-200 font-medium">{contactos.length} contactos</span>
+          <p className="text-sm text-gray-500">
+            <span className="text-gray-800 font-medium">{contactos.length} contactos</span>
             {stats.sinResultados > 0 && ` · ${stats.sinResultados} dominios sin resultados`}
           </p>
         )}

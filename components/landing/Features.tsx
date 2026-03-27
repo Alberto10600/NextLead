@@ -37,7 +37,7 @@ export default function Features() {
           <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
             Todo lo que necesitas para prospectar
           </h2>
-          <p className="text-slate-400 max-w-md mx-auto text-sm leading-relaxed">
+          <p className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed">
             En piloto automático. Sin perder tiempo en tareas manuales.
           </p>
         </div>
@@ -46,14 +46,14 @@ export default function Features() {
           {features.map((f) => (
             <div
               key={f.titulo}
-              className="bg-[#0D1321] border border-white/[0.06] rounded-2xl p-6 space-y-4 hover:border-indigo-500/20 hover:bg-[#131C2E] transition-all duration-300 group"
+              className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 hover:border-indigo-500/20 hover:bg-gray-100 transition-all duration-300 group"
             >
               <div className="bg-indigo-600/10 rounded-lg p-2.5 w-fit group-hover:bg-indigo-600/15 transition-colors duration-300">
                 {f.icon}
               </div>
               <div className="space-y-2">
-                <h3 className="text-base font-semibold text-slate-100">{f.titulo}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed">{f.descripcion}</p>
+                <h3 className="text-base font-semibold text-gray-900">{f.titulo}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{f.descripcion}</p>
               </div>
             </div>
           ))}

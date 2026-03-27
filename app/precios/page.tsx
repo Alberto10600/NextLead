@@ -18,12 +18,12 @@ export default async function PreciosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070B14]">
-      <header className="border-b border-white/[0.06] px-6 py-4">
+    <div className="min-h-screen bg-gray-50">
+      <header className="border-b border-gray-200 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="text-xl font-bold">
             <span className="text-blue-500">Next</span>
-            <span className="text-slate-200">Lead</span>
+            <span className="text-gray-800">Lead</span>
           </Link>
           <div className="flex items-center gap-4">
             {user ? (
@@ -31,7 +31,7 @@ export default async function PreciosPage() {
                 Ir al dashboard
               </Link>
             ) : (
-              <Link href="/login" className="text-sm text-slate-400 hover:text-slate-200">
+              <Link href="/login" className="text-sm text-gray-500 hover:text-gray-800">
                 Iniciar sesión
               </Link>
             )}

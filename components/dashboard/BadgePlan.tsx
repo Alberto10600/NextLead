@@ -5,7 +5,7 @@ interface BadgePlanProps {
 }
 
 const planColors: Record<Plan, string> = {
-  free:     'bg-slate-700 text-slate-300',
+  free:     'bg-slate-700 text-gray-700',
   starter:  'bg-blue-900/50 text-blue-300',
   pro:      'bg-purple-900/50 text-purple-300',
   business: 'bg-amber-900/50 text-amber-300',

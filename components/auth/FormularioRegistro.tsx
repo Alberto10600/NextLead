@@ -54,13 +54,13 @@ export default function FormularioRegistro() {
     router.refresh()
   }
 
-  const inputClass = "bg-[#070B14] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 outline-none transition-all duration-150 focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40 w-full"
+  const inputClass = "bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-150 focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/40 w-full"
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-slate-400 tracking-wide">Tu nombre</label>
+          <label className="text-xs font-medium text-gray-500 tracking-wide">Tu nombre</label>
           <input
             placeholder="María"
             value={form.nombre}
@@ -69,7 +69,7 @@ export default function FormularioRegistro() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-slate-400 tracking-wide">Agencia</label>
+          <label className="text-xs font-medium text-gray-500 tracking-wide">Agencia</label>
           <input
             placeholder="Mi Agencia"
             value={form.agencia}
@@ -80,7 +80,7 @@ export default function FormularioRegistro() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-slate-400 tracking-wide">Email</label>
+        <label className="text-xs font-medium text-gray-500 tracking-wide">Email</label>
         <input
           type="email"
           placeholder="tu@agencia.com"
@@ -92,7 +92,7 @@ export default function FormularioRegistro() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-slate-400 tracking-wide">Contraseña</label>
+        <label className="text-xs font-medium text-gray-500 tracking-wide">Contraseña</label>
         <input
           type="password"
           placeholder="Mínimo 6 caracteres"
@@ -130,12 +130,12 @@ export default function FormularioRegistro() {
         )}
       </button>
 
-      <p className="text-xs text-slate-600 text-center">
+      <p className="text-xs text-gray-400 text-center">
         Al registrarte aceptas nuestros términos de uso.
         Empiezas con 25 contactos gratis.
       </p>
 
-      <p className="text-sm text-center text-slate-500">
+      <p className="text-sm text-center text-gray-400">
         ¿Ya tienes cuenta?{' '}
         <Link href="/login" className="text-indigo-400 hover:text-indigo-300 transition-colors">
           Inicia sesión
