@@ -18,16 +18,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No hay dominios' }, { status: 400 })
   }
 
-  const { data: perfil } = await supabase.from('perfiles').select('hunter_api_key').eq('id', user.id).single()
-  const hunterKey = perfil?.hunter_api_key || undefined
-
   const contactos = []
   const dominiosSinResultados: string[] = []
 
   for (const dominio of dominios) {
     await sleep(200)
     try {
-      const resultados = await buscarTodosLosContactos(dominio, hunterKey)
+      const resultados = await buscarTodosLosContactos(dominio)
       if (resultados.length === 0) {
         dominiosSinResultados.push(dominio)
       } else {

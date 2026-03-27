@@ -18,12 +18,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Especifica al menos sector o país' }, { status: 400 })
   }
 
-  const { data: perfil } = await supabase.from('perfiles').select('hunter_api_key').eq('id', user.id).single()
-  const hunterKey = perfil?.hunter_api_key || undefined
-
   let empresas: DiscoverEmpresa[]
   try {
-    empresas = await descubrirEmpresas(filtros, limite, hunterKey)
+    empresas = await descubrirEmpresas(filtros, limite)
   } catch (e: unknown) {
     const msg = (e as Error).message
     console.error('[descubrir-empresas] Error:', msg)
