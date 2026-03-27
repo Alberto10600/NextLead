@@ -10,22 +10,17 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { nombre, descripcion_agencia, filtros_hunter } = body
+  const { nombre } = body
 
-  if (!nombre || !descripcion_agencia || !filtros_hunter) {
-    return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
+  if (!nombre?.trim()) {
+    return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
   }
 
   const { data, error } = await supabase
     .from('campanas')
     .insert({
       user_id: user.id,
-      nombre,
-      sector: filtros_hunter.sector || '',
-      pais: filtros_hunter.pais || '',
-      descripcion_agencia,
-      cargos_objetivo: filtros_hunter.departamentos || [],
-      filtros_hunter,
+      nombre: nombre.trim(),
       estado: 'borrador',
     })
     .select()
