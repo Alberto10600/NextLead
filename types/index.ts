@@ -1,5 +1,6 @@
 export type Plan = 'free' | 'starter' | 'pro' | 'business'
 export type EstadoCampana = 'borrador' | 'procesando' | 'activa' | 'pausada' | 'completada'
+export type Tono = 'cercano' | 'formal' | 'millennial' | 'tecnico'
 export type EstadoContacto = 'pendiente' | 'enviado' | 'abierto' | 'respondido' | 'rebotado' | 'error' | 'no_contactar'
 
 // Valores exactos de la API de Hunter.io
@@ -49,8 +50,20 @@ export interface Campana {
   total_enviados: number
   total_abiertos: number
   total_respondidos: number
+  tono?: Tono
+  dias_seguimiento?: number[]
   created_at: string
   updated_at: string
+}
+
+export interface Plantilla {
+  id: string
+  user_id: string
+  nombre: string
+  sector: string
+  descripcion: string
+  tono: Tono
+  created_at: string
 }
 
 export interface Contacto {

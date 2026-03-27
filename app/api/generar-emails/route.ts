@@ -10,17 +10,17 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
   const body = await request.json()
-  const { contacto_ids, descripcion_agencia, sector } = body as {
+  const { contacto_ids, descripcion_agencia, sector, tono = 'cercano' } = body as {
     contacto_ids: string[]
     descripcion_agencia: string
     sector: string
+    tono?: string
   }
 
   if (!contacto_ids?.length || !descripcion_agencia || !sector) {
     return NextResponse.json({ error: 'Faltan parámetros' }, { status: 400 })
   }
 
-  // Fetch the actual contacts
   const { data: contactos, error: fetchErr } = await supabase
     .from('contactos')
     .select('*')
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
         sector,
         contextoWeb: contextoWeb || undefined,
         descripcionAgencia: descripcion_agencia,
+        tono,
       })
 
       await supabase

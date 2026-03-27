@@ -79,6 +79,13 @@ Responde SOLO con JSON: {"actividad": "...", "tamano": "...", "dolor": "...", "r
   return extraerJSON(texto)
 }
 
+const INSTRUCCIONES_TONO: Record<string, string> = {
+  cercano:    'Tono cercano y directo. Tratamiento de tú. Natural, sin formalismos.',
+  formal:     'Tono profesional y formal. Tratamiento de usted. Respetuoso y corporativo.',
+  millennial: 'Tono muy cercano, informal y moderno. Sin formalismos, como un mensaje entre colegas.',
+  tecnico:    'Tono técnico y preciso. Usa datos, métricas y terminología del sector. Directo al grano.',
+}
+
 export async function generarEmailProspeccion(params: {
   nombre?: string
   apellido?: string
@@ -87,11 +94,14 @@ export async function generarEmailProspeccion(params: {
   sector: string
   contextoWeb?: string
   descripcionAgencia: string
+  tono?: string
 }): Promise<{ asunto: string; cuerpo: string }> {
-  const { nombre, apellido, cargo, empresa, sector, contextoWeb, descripcionAgencia } = params
+  const { nombre, apellido, cargo, empresa, sector, contextoWeb, descripcionAgencia, tono = 'cercano' } = params
 
   const skill = leerSkillEmail()
   const contextoLinea = contextoWeb ? `- Web de su empresa: ${contextoWeb}` : ''
+
+  const tonoInstruccion = INSTRUCCIONES_TONO[tono] || INSTRUCCIONES_TONO.cercano
 
   const userPrompt = skill
     ? skill
@@ -102,6 +112,7 @@ export async function generarEmailProspeccion(params: {
         .replace('{{sector}}', sector)
         .replace('{{contexto_web}}', contextoLinea)
         .replace('{{descripcion_agencia}}', descripcionAgencia)
+        .replace('{{tono}}', tonoInstruccion)
     : `Redacta email de prospección B2B en español para:
 - Nombre: ${nombre || 'el/la responsable'} ${apellido || ''}
 - Cargo: ${cargo || 'responsable de la empresa'}
@@ -109,6 +120,7 @@ export async function generarEmailProspeccion(params: {
 - Sector: ${sector}
 ${contextoLinea}
 - Mi agencia ofrece: ${descripcionAgencia}
+- Tono: ${tonoInstruccion}
 
 REGLAS:
 - Asunto: máximo 8 palabras, directo, sin emojis

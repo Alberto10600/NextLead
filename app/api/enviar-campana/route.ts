@@ -16,12 +16,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'campana_id es obligatorio' }, { status: 400 })
   }
 
-  // Obtener nombre de la agencia para el remitente
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('nombre, agencia')
-    .eq('id', user.id)
-    .single()
+  // Datos de la campaña y del perfil
+  const [{ data: campana }, { data: perfil }] = await Promise.all([
+    supabase.from('campanas').select('dias_seguimiento').eq('id', campana_id).single(),
+    supabase.from('perfiles').select('nombre, agencia').eq('id', user.id).single(),
+  ])
 
   const nombreRemitente = perfil?.agencia || perfil?.nombre || undefined
 
@@ -98,8 +97,10 @@ export async function POST(request: Request) {
         total_contactos: 1,
       }, { onConflict: 'user_id,email' })
 
-    // Programar seguimientos
-    const diasSeguimiento = [3, 7, 14]
+    // Programar seguimientos usando días configurados en la campaña
+    const diasSeguimiento: number[] = campana?.dias_seguimiento?.length
+      ? campana.dias_seguimiento
+      : [3, 7, 14]
     for (let i = 0; i < diasSeguimiento.length; i++) {
       await supabase.from('seguimientos').insert({
         contacto_id: contacto.id,

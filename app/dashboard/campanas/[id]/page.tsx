@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import type { Campana, Contacto } from '@/types'
+import type { Campana, Contacto, Plantilla, Tono } from '@/types'
 import TablaContactos from '@/components/dashboard/TablaContactos'
 import Toast from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
@@ -47,6 +47,13 @@ export default function DetalleCampanaPage() {
   const [buscandoSector, setBuscandoSector] = useState(false)
   const [dominiosSugeridos, setDominiosSugeridos] = useState<string[]>([])
   const [modoEnvio, setModoEnvio] = useState<'test' | 'real'>('test')
+  // P2-6 tono
+  const [tono, setTono] = useState<Tono>('cercano')
+  // P2-4 días de seguimiento
+  const [diasSeguimiento, setDiasSeguimiento] = useState<number[]>([3, 7, 14])
+  // P2-2 plantillas
+  const [plantillas, setPlantillas] = useState<Plantilla[]>([])
+  const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
 
   const cargarCampana = useCallback(async () => {
     const res = await fetch(`/api/campanas/${id}`)
@@ -59,11 +66,21 @@ export default function DetalleCampanaPage() {
       if (data.campana?.dominios?.length) {
         setDominiosTexto(data.campana.dominios.join('\n'))
       }
+      // Pre-fill generator fields from saved campaign data
+      if (data.campana?.descripcion_agencia) setDescAgencia(data.campana.descripcion_agencia)
+      if (data.campana?.sector) setSectorObjetivo(data.campana.sector)
+      if (data.campana?.tono) setTono(data.campana.tono as Tono)
+      if (data.campana?.dias_seguimiento?.length) setDiasSeguimiento(data.campana.dias_seguimiento)
     }
     setLoading(false)
   }, [id])
 
   useEffect(() => { cargarCampana() }, [cargarCampana])
+
+  // Load plantillas once
+  useEffect(() => {
+    fetch('/api/plantillas').then(r => r.json()).then(d => setPlantillas(d.plantillas || []))
+  }, [])
 
   const dominiosParsed = parseDominios(dominiosTexto)
   const dominiosNuevosParsed = parseDominios(dominiosNuevos)
@@ -143,6 +160,33 @@ export default function DetalleCampanaPage() {
     setContactos((prev) => prev.filter((c) => c.id !== contactoId))
   }
 
+  const guardarComoPlantilla = async () => {
+    if (!descAgencia.trim()) return
+    const nombre = window.prompt('Nombre para esta plantilla:', `${sectorObjetivo || 'Mi pitch'} — ${tono}`)
+    if (!nombre) return
+    setGuardandoPlantilla(true)
+    try {
+      const res = await fetch('/api/plantillas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, sector: sectorObjetivo, descripcion: descAgencia, tono }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPlantillas(prev => [data.plantilla, ...prev])
+        setToast({ msg: 'Plantilla guardada', tipo: 'success' })
+      }
+    } finally {
+      setGuardandoPlantilla(false)
+    }
+  }
+
+  const cargarPlantilla = (p: Plantilla) => {
+    setDescAgencia(p.descripcion)
+    if (p.sector) setSectorObjetivo(p.sector)
+    setTono(p.tono)
+  }
+
   const generarEmails = async () => {
     const sinEmail = contactos.filter((c) => !c.email_generado)
     if (sinEmail.length === 0) {
@@ -152,6 +196,18 @@ export default function DetalleCampanaPage() {
     setFase('generando')
     setProgGeneracion({ hecho: 0, total: sinEmail.length })
 
+    // Save campaign settings for next time
+    await fetch(`/api/campanas/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        descripcion_agencia: descAgencia,
+        sector: sectorObjetivo,
+        tono,
+        dias_seguimiento: diasSeguimiento,
+      }),
+    })
+
     try {
       const res = await fetch('/api/generar-emails', {
         method: 'POST',
@@ -160,6 +216,7 @@ export default function DetalleCampanaPage() {
           contacto_ids: sinEmail.map((c) => c.id),
           descripcion_agencia: descAgencia,
           sector: sectorObjetivo,
+          tono,
         }),
       })
       const data = await res.json()
@@ -522,15 +579,58 @@ export default function DetalleCampanaPage() {
               </button>
             </div>
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">Sector objetivo</label>
-                <input
-                  value={sectorObjetivo}
-                  onChange={(e) => setSectorObjetivo(e.target.value)}
-                  placeholder="ej. Ecommerce, SaaS, Consultoría..."
-                  className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
-                />
+
+              {/* Plantilla loader */}
+              {plantillas.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Cargar plantilla guardada</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {plantillas.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => cargarPlantilla(p)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-gray-50 hover:bg-orange-50 border border-gray-200 hover:border-orange-200 text-gray-600 hover:text-orange-600 rounded-md transition-colors"
+                      >
+                        {p.nombre}
+                        {p.sector && <span className="text-gray-300">·</span>}
+                        {p.sector && <span className="text-gray-400">{p.sector}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Sector objetivo</label>
+                  <input
+                    value={sectorObjetivo}
+                    onChange={(e) => setSectorObjetivo(e.target.value)}
+                    placeholder="ej. Ecommerce, SaaS..."
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                  />
+                </div>
+                {/* P2-6 tono */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Tono del email</label>
+                  <div className="flex gap-1">
+                    {(['cercano', 'formal', 'millennial', 'tecnico'] as Tono[]).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setTono(t)}
+                        className={`flex-1 px-2 py-2 text-xs rounded-md border transition-colors capitalize ${
+                          tono === t
+                            ? 'bg-orange-50 border-orange-300 text-orange-600 font-medium'
+                            : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
+
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1.5">¿Qué ofrece tu agencia?</label>
                 <textarea
@@ -541,7 +641,50 @@ export default function DetalleCampanaPage() {
                   className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 resize-none transition-all"
                 />
               </div>
-              <div className="flex items-center gap-3">
+
+              {/* P2-4 días de seguimiento */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                  Seguimientos automáticos — {diasSeguimiento.length} programado{diasSeguimiento.length !== 1 ? 's' : ''}
+                </label>
+                <div className="flex items-center flex-wrap gap-2">
+                  {diasSeguimiento.map((dia, i) => (
+                    <div key={i} className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
+                      <span className="text-xs text-gray-400">#{i + 1}</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={90}
+                        value={dia}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value) || 1
+                          setDiasSeguimiento(prev => prev.map((d, j) => j === i ? v : d))
+                        }}
+                        className="w-10 text-center text-xs font-medium text-gray-700 bg-transparent outline-none"
+                      />
+                      <span className="text-xs text-gray-400">d</span>
+                      {diasSeguimiento.length > 1 && (
+                        <button
+                          onClick={() => setDiasSeguimiento(prev => prev.filter((_, j) => j !== i))}
+                          className="text-gray-300 hover:text-red-400 transition-colors ml-0.5"
+                        >
+                          <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {diasSeguimiento.length < 5 && (
+                    <button
+                      onClick={() => setDiasSeguimiento(prev => [...prev, (prev[prev.length - 1] || 7) + 7])}
+                      className="px-2.5 py-1.5 text-xs text-gray-400 hover:text-orange-500 border border-dashed border-gray-200 hover:border-orange-300 rounded-lg transition-colors"
+                    >
+                      + añadir
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-1">
                 <button
                   onClick={generarEmails}
                   disabled={!descAgencia.trim() || !sectorObjetivo.trim()}
@@ -553,6 +696,16 @@ export default function DetalleCampanaPage() {
                   Generar {sinEmailGenerado} emails
                 </button>
                 <p className="text-xs text-gray-400">~{Math.ceil(sinEmailGenerado * 0.5 / 60)} min aprox.</p>
+                {descAgencia.trim() && (
+                  <button
+                    onClick={guardarComoPlantilla}
+                    disabled={guardandoPlantilla}
+                    className="ml-auto text-xs text-gray-400 hover:text-orange-500 transition-colors flex items-center gap-1"
+                  >
+                    <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Guardar como plantilla
+                  </button>
+                )}
               </div>
             </div>
           </div>
