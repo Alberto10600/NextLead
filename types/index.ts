@@ -2,6 +2,7 @@ export type Plan = 'free' | 'starter' | 'pro' | 'business'
 export type EstadoCampana = 'borrador' | 'procesando' | 'activa' | 'pausada' | 'completada'
 export type Tono = 'cercano' | 'formal' | 'millennial' | 'tecnico'
 export type EstadoContacto = 'pendiente' | 'enviado' | 'abierto' | 'respondido' | 'rebotado' | 'error' | 'no_contactar'
+export type EtapaPipeline = 'respondio' | 'call_agendada' | 'propuesta_enviada' | 'negociando' | 'cerrado_ganado' | 'cerrado_perdido'
 
 // Valores exactos de la API de Hunter.io
 export type HunterDepartamento =
@@ -87,6 +88,7 @@ export interface Contacto {
   fecha_respuesta?: string
   numero_seguimiento: number
   notas?: string
+  etapa_pipeline?: EtapaPipeline | null
   created_at?: string
   // campo virtual: viene del join con campanas en /dashboard/contactos
   sector?: string
