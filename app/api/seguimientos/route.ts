@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { enviarEmail } from '@/lib/resend'
+import { generarEmailSeguimiento } from '@/lib/claude'
 import type { Contacto, Seguimiento } from '@/types'
 
 export async function POST(request: Request) {
@@ -10,9 +12,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   }
 
+  const body = await request.json().catch(() => ({}))
+  const { modo = 'test' } = body as { modo?: 'test' | 'real' }
+
+  // Perfil del usuario para el remitente
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('nombre, agencia')
+    .eq('id', user.id)
+    .single()
+
+  const nombreRemitente = perfil?.agencia || perfil?.nombre || undefined
+
   const { data: seguimientos } = await supabase
     .from('seguimientos')
-    .select('*, contactos(*)')
+    .select('*, contactos(*), campanas(descripcion_agencia)')
     .eq('user_id', user.id)
     .eq('estado', 'pendiente')
     .lte('fecha_programada', new Date().toISOString())
@@ -23,31 +37,78 @@ export async function POST(request: Request) {
 
   let procesados = 0
   let cancelados = 0
+  const errores: string[] = []
 
-  for (const seguimiento of seguimientos as (Seguimiento & { contactos: Contacto })[]) {
-    const contacto = seguimiento.contactos
+  for (const seg of seguimientos as (Seguimiento & { contactos: Contacto; campanas: { descripcion_agencia: string } })[]) {
+    const contacto = seg.contactos
 
+    // Si el contacto respondió, cancelar todos sus seguimientos
     if (contacto.estado === 'respondido') {
-      await supabase.from('seguimientos').update({ estado: 'cancelado' }).eq('id', seguimiento.id)
+      await supabase.from('seguimientos').update({ estado: 'cancelado' }).eq('id', seg.id)
       cancelados++
       continue
     }
 
-    // Marcar como enviado (sin Resend por ahora)
+    // Generar contenido del seguimiento si no existe
+    let asunto = seg.asunto
+    let cuerpo = seg.cuerpo
+
+    if (!asunto || !cuerpo) {
+      try {
+        const descripcionAgencia = seg.campanas?.descripcion_agencia || ''
+        const emailAnterior = contacto.email_generado || ''
+        const generated = await generarEmailSeguimiento({
+          nombre: contacto.nombre,
+          empresa: contacto.empresa,
+          emailAnterior,
+          numeroSeguimiento: seg.numero_seguimiento,
+          descripcionAgencia,
+        })
+        asunto = generated.asunto
+        cuerpo = generated.cuerpo
+
+        // Guardar el contenido generado
+        await supabase
+          .from('seguimientos')
+          .update({ asunto, cuerpo })
+          .eq('id', seg.id)
+      } catch (e: unknown) {
+        errores.push(`Error generando seguimiento para ${contacto.email}: ${(e as Error).message}`)
+        continue
+      }
+    }
+
+    // Enviar email
+    if (modo === 'real') {
+      const resultado = await enviarEmail({
+        to: contacto.email,
+        asunto: asunto!,
+        cuerpo: cuerpo!,
+        nombreRemitente,
+        contacto_id: contacto.id,
+      })
+
+      if (resultado.error) {
+        errores.push(`Error enviando a ${contacto.email}: ${resultado.error}`)
+        continue
+      }
+    }
+
+    // Marcar como enviado
     await supabase
       .from('seguimientos')
       .update({ estado: 'enviado', fecha_enviado: new Date().toISOString() })
-      .eq('id', seguimiento.id)
+      .eq('id', seg.id)
 
     await supabase
       .from('contactos')
-      .update({ numero_seguimiento: seguimiento.numero_seguimiento })
+      .update({ numero_seguimiento: seg.numero_seguimiento })
       .eq('id', contacto.id)
 
     procesados++
   }
 
-  return NextResponse.json({ procesados, cancelados })
+  return NextResponse.json({ procesados, cancelados, errores, modo })
 }
 
 export async function GET() {

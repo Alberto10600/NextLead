@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { enviarEmail } from '@/lib/resend'
 import { sleep, añadirDias } from '@/lib/utils'
 import type { Contacto } from '@/types'
 
@@ -14,6 +15,15 @@ export async function POST(request: Request) {
   if (!campana_id) {
     return NextResponse.json({ error: 'campana_id es obligatorio' }, { status: 400 })
   }
+
+  // Obtener nombre de la agencia para el remitente
+  const { data: perfil } = await supabase
+    .from('perfiles')
+    .select('nombre, agencia')
+    .eq('id', user.id)
+    .single()
+
+  const nombreRemitente = perfil?.agencia || perfil?.nombre || undefined
 
   // Solo contactos pendientes que ya tienen email generado
   const { data: contactos } = await supabase
@@ -41,19 +51,29 @@ export async function POST(request: Request) {
   let enviados = 0
 
   for (const contacto of contactos as Contacto[]) {
-    await sleep(50)
+    await sleep(modo === 'real' ? 300 : 50)
 
     if (modo === 'real') {
-      // TODO: integrar Resend aquí cuando esté listo
-      // const { data, error } = await resend.emails.send({
-      //   from: 'tu@tudominio.com',
-      //   to: contacto.email,
-      //   subject: contacto.asunto_generado!,
-      //   text: contacto.email_generado!,
-      // })
+      const resultado = await enviarEmail({
+        to: contacto.email,
+        asunto: contacto.asunto_generado!,
+        cuerpo: contacto.email_generado!,
+        nombreRemitente,
+        contacto_id: contacto.id,
+      })
+
+      if (resultado.error) {
+        errores.push(`${contacto.email}: ${resultado.error}`)
+        // Marcar como error para no reintentar
+        await supabase
+          .from('contactos')
+          .update({ estado: 'error' })
+          .eq('id', contacto.id)
+        continue
+      }
     }
 
-    // Marcar como enviado (en modo test no se envía realmente)
+    // Marcar como enviado
     const { error } = await supabase
       .from('contactos')
       .update({

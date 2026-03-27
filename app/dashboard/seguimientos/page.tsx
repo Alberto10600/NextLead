@@ -48,6 +48,7 @@ export default function SeguimientosPage() {
   const [detalle, setDetalle] = useState<SeguimientoConContacto | null>(null)
   const [notas, setNotas] = useState('')
   const [guardandoNotas, setGuardandoNotas] = useState(false)
+  const [modoSeguimiento, setModoSeguimiento] = useState<'test' | 'real'>('test')
 
   const cargar = () => {
     fetch('/api/seguimientos')
@@ -82,11 +83,26 @@ export default function SeguimientosPage() {
   }, [seguimientos, filtro])
 
   const procesarAhora = async () => {
+    if (modoSeguimiento === 'real') {
+      const pendientes = seguimientos.filter((s) => s.estado === 'pendiente' && new Date(s.fecha_programada) <= new Date())
+      const ok = window.confirm(
+        `¿Enviar ${pendientes.length} seguimientos REALES?\n\nSe enviarán correos reales a los contactos.`
+      )
+      if (!ok) return
+    }
+
     setProcesando(true)
     try {
-      const res = await fetch('/api/seguimientos', { method: 'POST' })
+      const res = await fetch('/api/seguimientos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modo: modoSeguimiento }),
+      })
       const data = await res.json()
-      setToast({ msg: `${data.procesados} enviados · ${data.cancelados} cancelados`, tipo: 'success' })
+      const msg = modoSeguimiento === 'test'
+        ? `${data.procesados} marcados (test) · ${data.cancelados} cancelados`
+        : `${data.procesados} enviados · ${data.cancelados} cancelados${data.errores?.length ? ` · ${data.errores.length} errores` : ''}`
+      setToast({ msg, tipo: data.errores?.length ? 'error' : 'success' })
       cargar()
     } catch {
       setToast({ msg: 'Error al procesar seguimientos', tipo: 'error' })
@@ -153,9 +169,28 @@ export default function SeguimientosPage() {
               {stats.pendientesHoy} pendientes hoy
             </span>
           )}
-          <Button onClick={procesarAhora} loading={procesando} disabled={stats.pendientesHoy === 0} size="sm">
-            Procesar ahora
-          </Button>
+          <div className="inline-flex items-center rounded-md border border-gray-200 overflow-hidden">
+            <button
+              onClick={() => setModoSeguimiento((m) => m === 'test' ? 'real' : 'test')}
+              title={modoSeguimiento === 'test' ? 'Modo test activo. Click para envío real' : 'Modo real activo. Click para volver a test'}
+              className={`px-2 py-1.5 text-xs font-medium border-r border-gray-200 transition-colors ${
+                modoSeguimiento === 'real'
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'bg-gray-50 text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              {modoSeguimiento === 'real' ? '● Real' : '○ Test'}
+            </button>
+            <Button
+              onClick={procesarAhora}
+              loading={procesando}
+              disabled={stats.pendientesHoy === 0}
+              size="sm"
+              className="rounded-none border-0"
+            >
+              Procesar ahora
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -46,6 +46,7 @@ export default function DetalleCampanaPage() {
   const [paisBusqueda, setPaisBusqueda] = useState('España')
   const [buscandoSector, setBuscandoSector] = useState(false)
   const [dominiosSugeridos, setDominiosSugeridos] = useState<string[]>([])
+  const [modoEnvio, setModoEnvio] = useState<'test' | 'real'>('test')
 
   const cargarCampana = useCallback(async () => {
     const res = await fetch(`/api/campanas/${id}`)
@@ -185,18 +186,29 @@ export default function DetalleCampanaPage() {
       setToast({ msg: 'No hay contactos pendientes con email generado', tipo: 'info' })
       return
     }
+
+    if (modoEnvio === 'real') {
+      const ok = window.confirm(
+        `¿Enviar ${conEmail.length} emails REALES a los contactos?\n\nEsto enviará correos electrónicos reales desde tu cuenta de Resend.`
+      )
+      if (!ok) return
+    }
+
     setFase('enviando')
     try {
       const res = await fetch('/api/enviar-campana', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campana_id: id, modo: 'test' }),
+        body: JSON.stringify({ campana_id: id, modo: modoEnvio }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error enviando')
 
       await cargarCampana()
-      setToast({ msg: `${data.enviados} emails marcados como enviados (modo test — sin envío real)`, tipo: 'success' })
+      const msg = modoEnvio === 'test'
+        ? `${data.enviados} emails marcados (modo test — sin envío real)`
+        : `${data.enviados} emails enviados${data.errores?.length ? ` · ${data.errores.length} errores` : ''}`
+      setToast({ msg, tipo: data.errores?.length ? 'error' : 'success' })
     } catch (e: unknown) {
       setToast({ msg: (e as Error).message, tipo: 'error' })
     } finally {
@@ -293,17 +305,35 @@ export default function DetalleCampanaPage() {
             </button>
           )}
 
-          {/* Enviar campaña (test) */}
+          {/* Enviar campaña */}
           {tieneContactos && !enProceso && contactos.some((c) => c.email_generado && c.estado === 'pendiente') && (
-            <button
-              onClick={enviarCampana}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border border-emerald-500 bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-              </svg>
-              Enviar test · {contactos.filter((c) => c.email_generado && c.estado === 'pendiente').length}
-            </button>
+            <div className="inline-flex items-center rounded-md border border-gray-200 overflow-hidden">
+              {/* Toggle test/real */}
+              <button
+                onClick={() => setModoEnvio((m) => m === 'test' ? 'real' : 'test')}
+                title={modoEnvio === 'test' ? 'Modo test: sin envío real. Click para activar envío real' : 'Modo real: enviará correos reales. Click para volver a test'}
+                className={`px-2 py-2 text-xs font-medium border-r border-gray-200 transition-colors ${
+                  modoEnvio === 'real'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-gray-50 text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                {modoEnvio === 'real' ? '● Real' : '○ Test'}
+              </button>
+              <button
+                onClick={enviarCampana}
+                className={`inline-flex items-center gap-1.5 text-sm px-3 py-2 transition-colors ${
+                  modoEnvio === 'real'
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                }`}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+                Enviar · {contactos.filter((c) => c.email_generado && c.estado === 'pendiente').length}
+              </button>
+            </div>
           )}
 
           {/* Añadir dominios (cuando ya hay contactos) */}
