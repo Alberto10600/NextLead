@@ -112,7 +112,23 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-4 border-t border-gray-200">
+      <div className="px-3 py-4 border-t border-gray-200 space-y-0.5">
+        <Link
+          href="/dashboard/perfil"
+          className={`
+            group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150
+            ${pathname === '/dashboard/perfil'
+              ? 'bg-orange-50 text-orange-600 font-medium'
+              : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
+            }
+          `}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          <span className="tracking-tight">Perfil</span>
+        </Link>
         <button
           onClick={handleLogout}
           className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-red-400 hover:bg-red-500/[0.06] transition-all duration-150"
