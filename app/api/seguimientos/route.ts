@@ -60,7 +60,7 @@ export async function GET() {
 
   const { data: seguimientos } = await supabase
     .from('seguimientos')
-    .select('*, contactos(nombre, apellido, email, empresa)')
+    .select('*, contactos(id, nombre, apellido, email, empresa, cargo, dominio, estado, asunto_generado, email_generado, fecha_envio, fecha_apertura, fecha_respuesta, notas)')
     .eq('user_id', user.id)
     .order('fecha_programada', { ascending: true })
 

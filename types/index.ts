@@ -72,6 +72,7 @@ export interface Contacto {
   fecha_apertura?: string
   fecha_respuesta?: string
   numero_seguimiento: number
+  notas?: string
   created_at?: string
 }
 
