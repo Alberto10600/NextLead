@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/dashboard/Sidebar'
+import OnboardingTour from '@/components/dashboard/OnboardingTour'
 
 export default async function DashboardLayout({
   children,
@@ -20,6 +21,7 @@ export default async function DashboardLayout({
       <main className="flex-1 overflow-auto">
         {children}
       </main>
+      <OnboardingTour />
     </div>
   )
 }

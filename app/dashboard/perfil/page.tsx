@@ -237,6 +237,23 @@ export default function PerfilPage() {
 
       </div>
 
+      {/* Ayuda */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-sm font-semibold text-gray-900 mb-4">Ayuda</h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-700">Tour de bienvenida</p>
+            <p className="text-xs text-gray-400 mt-0.5">Vuelve a ver la guía de cómo funciona Arrivo</p>
+          </div>
+          <button
+            onClick={() => { localStorage.removeItem('arrivo_onboarding_v1'); window.location.reload() }}
+            className="text-sm text-orange-500 hover:text-orange-600 font-medium transition-colors"
+          >
+            Ver tour →
+          </button>
+        </div>
+      </div>
+
       {toast && <Toast message={toast.msg} type={toast.tipo} onClose={() => setToast(null)} />}
     </div>
   )
