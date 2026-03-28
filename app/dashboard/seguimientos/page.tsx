@@ -50,11 +50,23 @@ export default function SeguimientosPage() {
   const [guardandoNotas, setGuardandoNotas] = useState(false)
   const [modoSeguimiento, setModoSeguimiento] = useState<'test' | 'real'>('test')
 
-  const cargar = () => {
-    fetch('/api/seguimientos')
-      .then((r) => r.json())
-      .then((data) => setSeguimientos(data.seguimientos || []))
-      .finally(() => setLoading(false))
+  const cargar = async () => {
+    try {
+      const r = await fetch('/api/seguimientos')
+      const data = await r.json()
+      if (!r.ok) {
+        console.error('[seguimientos] API error:', data)
+        setToast({ msg: data.error || 'Error cargando seguimientos', tipo: 'error' })
+        return
+      }
+      console.log('[seguimientos] rows recibidos:', data.seguimientos?.length ?? 0)
+      setSeguimientos(data.seguimientos || [])
+    } catch (e) {
+      console.error('[seguimientos] fetch error:', e)
+      setToast({ msg: 'Error de red cargando seguimientos', tipo: 'error' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { cargar() }, [])
