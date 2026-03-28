@@ -96,7 +96,7 @@ export async function POST(request: Request) {
         errores.push(`${contacto.email}: ${resultado.error}`)
         await supabase
           .from('contactos')
-          .update({ estado: 'error' })
+          .update({ estado: 'error', error_detalle: resultado.error })
           .eq('id', contacto.id)
         continue
       }

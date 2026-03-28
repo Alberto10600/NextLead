@@ -34,6 +34,7 @@ function KanbanCard({
 }) {
   const [editandoNotas, setEditandoNotas] = useState(false)
   const [notas, setNotas] = useState(contacto.notas || '')
+  const [verEmail, setVerEmail] = useState(false)
   const etapaActual = etapas.findIndex((e) => e.id === (contacto.etapa_pipeline || 'respondio'))
 
   const guardarNotas = () => {
@@ -75,6 +76,36 @@ function KanbanCard({
         <p className="text-[10px] text-gray-400 mb-3">
           Respondió el {formatFecha(contacto.fecha_respuesta)}
         </p>
+      )}
+
+      {/* Email enviado */}
+      {contacto.email_generado && (
+        <div className="mb-3">
+          <button
+            onClick={() => setVerEmail((v) => !v)}
+            className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+            </svg>
+            {verEmail ? 'Ocultar email' : 'Ver email enviado'}
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${verEmail ? 'rotate-180' : ''}`}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          {verEmail && (
+            <div className="mt-1.5 bg-gray-50 border border-gray-100 rounded p-2">
+              {contacto.asunto_generado && (
+                <p className="text-[10px] font-semibold text-gray-500 mb-1 truncate">
+                  Asunto: {contacto.asunto_generado}
+                </p>
+              )}
+              <p className="text-[11px] text-gray-600 leading-relaxed whitespace-pre-line line-clamp-6">
+                {contacto.email_generado}
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Notas */}

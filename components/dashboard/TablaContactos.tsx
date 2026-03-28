@@ -41,7 +41,7 @@ function esGenerico(c: Contacto): boolean {
   return GENERIC_PREFIXES.some((p) => local === p || local.startsWith(p + '.') || local.startsWith(p + '_'))
 }
 
-type Tab = 'todos' | 'decisores' | 'genericos'
+type Tab = 'todos' | 'decisores' | 'genericos' | 'abiertos'
 
 const PAGE_SIZE = 50
 
@@ -89,8 +89,9 @@ export default function TablaContactos({ contactos: contactosIniciales, onExclui
   const tieneSector = useMemo(() => contactos.some((c) => c.sector), [contactos])
   const decisores = useMemo(() => contactos.filter(esDecisionMaker), [contactos])
   const genericos = useMemo(() => contactos.filter(esGenerico), [contactos])
+  const abiertos = useMemo(() => contactos.filter((c) => c.estado === 'abierto'), [contactos])
 
-  const baseTab = tab === 'decisores' ? decisores : tab === 'genericos' ? genericos : contactos
+  const baseTab = tab === 'decisores' ? decisores : tab === 'genericos' ? genericos : tab === 'abiertos' ? abiertos : contactos
 
   const filtrados = useMemo(() => {
     if (!busqueda.trim()) return baseTab
@@ -140,11 +141,12 @@ export default function TablaContactos({ contactos: contactosIniciales, onExclui
       <div className="flex flex-col gap-3 mb-3">
         {/* Tabs + CSV */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5">
+          <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 flex-wrap gap-0.5">
             {([
               ['todos',     `Todos · ${contactos.length}`],
               ['decisores', `Decision Makers · ${decisores.length}`],
               ['genericos', `Genéricos · ${genericos.length}`],
+              ...(abiertos.length > 0 ? [['abiertos', `Abiertos sin resp. · ${abiertos.length}`]] : []),
             ] as [Tab, string][]).map(([t, label]) => (
               <button
                 key={t}
@@ -254,8 +256,16 @@ export default function TablaContactos({ contactos: contactosIniciales, onExclui
                     <td className="px-5 py-3.5 text-xs text-gray-400">{c.sector || '—'}</td>
                   )}
                   <td className="px-5 py-3.5">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
+                      title={c.estado === 'error' && c.error_detalle ? c.error_detalle : undefined}
+                    >
                       {badge.label}
+                      {c.estado === 'error' && c.error_detalle && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                      )}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">

@@ -31,6 +31,12 @@ function buildHtml(cuerpo: string, contacto_id?: string): string {
     ? `<img src="${pixelUrl}" width="1" height="1" style="display:block;width:1px;height:1px;border:0;" alt="" />`
     : ''
 
+  const unsubscribeLink = contacto_id
+    ? `<p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#aaaaaa;margin:24px 0 0;padding-top:16px;border-top:1px solid #eeeeee;">
+        Si no deseas recibir más emails, <a href="${APP_URL()}/baja?id=${contacto_id}" style="color:#aaaaaa;">haz clic aquí para darte de baja</a>.
+      </p>`
+    : ''
+
   const body = cuerpo
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -43,6 +49,7 @@ function buildHtml(cuerpo: string, contacto_id?: string): string {
 <body style="margin:0;padding:0;background:#ffffff;">
 <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.7;color:#333333;max-width:580px;margin:0 auto;padding:24px 16px;">
 ${body}
+${unsubscribeLink}
 </div>
 ${pixel}
 </body>

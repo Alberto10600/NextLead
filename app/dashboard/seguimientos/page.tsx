@@ -169,10 +169,30 @@ export default function SeguimientosPage() {
               {stats.pendientesHoy} pendientes hoy
             </span>
           )}
+          <div className="flex items-center gap-2">
+            <div className="group relative">
+              <button
+                className="text-gray-300 hover:text-gray-500 transition-colors"
+                tabIndex={-1}
+                aria-label="Ayuda sobre modos de envío"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </button>
+              <div className="pointer-events-none absolute right-0 top-6 z-20 hidden group-hover:block w-64 bg-gray-900 text-white text-xs rounded-lg px-3 py-2.5 shadow-lg">
+                <p className="font-semibold mb-1">Modo Test vs Real</p>
+                <p className="text-gray-300">
+                  <strong className="text-white">Test:</strong> Marca los seguimientos como enviados sin enviar emails reales. Ideal para probar el flujo.
+                </p>
+                <p className="text-gray-300 mt-1">
+                  <strong className="text-white">Real:</strong> Envía los emails a los contactos. Solo se procesan los vencidos o de hoy.
+                </p>
+              </div>
+            </div>
           <div className="inline-flex items-center rounded-md border border-gray-200 overflow-hidden">
             <button
               onClick={() => setModoSeguimiento((m) => m === 'test' ? 'real' : 'test')}
-              title={modoSeguimiento === 'test' ? 'Modo test activo. Click para envío real' : 'Modo real activo. Click para volver a test'}
               className={`px-2 py-1.5 text-xs font-medium border-r border-gray-200 transition-colors ${
                 modoSeguimiento === 'real'
                   ? 'bg-emerald-50 text-emerald-700'
@@ -190,6 +210,7 @@ export default function SeguimientosPage() {
             >
               Procesar ahora
             </Button>
+          </div>
           </div>
         </div>
       </div>

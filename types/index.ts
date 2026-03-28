@@ -83,6 +83,7 @@ export interface Contacto {
   analisis_empresa?: { actividad?: string; tamano?: string; dolor?: string; resumen?: string } | null
   asunto_generado?: string
   email_generado?: string
+  error_detalle?: string | null
   estado: EstadoContacto
   fecha_envio?: string
   fecha_apertura?: string
