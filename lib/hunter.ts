@@ -63,7 +63,10 @@ export async function descubrirEmpresas(
 
 // ─── Domain Search: todos los emails de un dominio, sin filtros ──────────────
 
+// Máximo de contactos que Hunter devuelve por página (plan de pago)
 const PAGE_SIZE = 100
+// Máximo que permitimos pedir en una sola llamada
+const MAX_PERMITIDO = 50
 
 type HunterEmailRaw = {
   first_name?: string
@@ -134,38 +137,26 @@ async function fetchPagina(
 }
 
 /**
- * Devuelve TODOS los emails de un dominio paginando automáticamente.
- * Detecta el límite real del plan (10 en free, 100 en paid) y pagina con él.
+ * Devuelve contactos de un dominio usando Hunter.
+ *
+ * Optimización de créditos: cuando maxPorDominio > 0, pedimos exactamente ese
+ * número como `limit` — Hunter cobra por contacto devuelto, no por página.
+ * Si maxPorDominio = 0 ("Todos"), paginamos hasta agotar los resultados.
+ *
+ * Hard cap en MAX_PERMITIDO (50) para evitar consumir créditos sin querer.
+ *
+ * @param maxPorDominio - 0 = sin límite (paginado), >0 = exactamente N contactos
  */
-/**
- * Devuelve TODOS los emails de un dominio paginando automáticamente.
- * @param maxPorDominio - 0 = sin límite, >0 = máximo de contactos a devolver
- */
-export async function buscarTodosLosContactos(dominio: string, maxPorDominio = 0): Promise<HunterContacto[]> {
-  const primera = await fetchPagina(dominio, 0)
-  const todos = [...primera.emails]
+export async function buscarTodosLosContactos(dominio: string, maxPorDominio = 3): Promise<HunterContacto[]> {
+  // Aplicar hard cap
+  const limite = maxPorDominio === 0
+    ? MAX_PERMITIDO   // "Todos" — igualmente acotado al máximo permitido
+    : Math.min(maxPorDominio, MAX_PERMITIDO)
 
-  // Si ya alcanzamos el límite con la primera página, devolver ya
-  if (maxPorDominio > 0 && todos.length >= maxPorDominio) {
-    return todos.slice(0, maxPorDominio)
-  }
+  // Pedimos directamente el número que necesitamos — 1 sola llamada la mayoría de veces
+  const primera = await fetchPagina(dominio, 0, limite)
+  const resultado = primera.emails.slice(0, limite)
 
-  // El límite efectivo = cuántos trajo la primera página (10 en free, 100 en paid)
-  const limite = primera.emails.length || PAGE_SIZE
-  let offset = limite
-  let ultimaPaginaLlena = primera.emails.length === limite
-
-  while (ultimaPaginaLlena) {
-    if (maxPorDominio > 0 && todos.length >= maxPorDominio) break
-    await sleep(300)
-    const pagina = await fetchPagina(dominio, offset, limite)
-    if (pagina.emails.length === 0) break
-    todos.push(...pagina.emails)
-    offset += limite
-    ultimaPaginaLlena = pagina.emails.length === limite
-  }
-
-  const resultado = maxPorDominio > 0 ? todos.slice(0, maxPorDominio) : todos
-  console.log(`[Hunter] ${dominio} → ${resultado.length} contactos (max: ${maxPorDominio || 'todos'})`)
+  console.log(`[Hunter] ${dominio} → ${resultado.length} contactos (solicitado: ${limite}, max config: ${maxPorDominio})`)
   return resultado
 }

@@ -700,8 +700,8 @@ export default function DetalleCampanaPage() {
               {/* Contactos por empresa — número personalizado */}
               <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
                 <label className="text-xs font-medium text-gray-500 shrink-0">Máx. por empresa</label>
-                <div className="flex items-center gap-1.5">
-                  {[1, 2, 3, 5].map((n) => (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[1, 3, 5, 10, 20].map((n) => (
                     <button
                       key={n}
                       onClick={() => { setMaxPorDominio(n); setMaxPorDominioInput(String(n)) }}
@@ -722,28 +722,19 @@ export default function DetalleCampanaPage() {
                     onChange={(e) => {
                       setMaxPorDominioInput(e.target.value)
                       const n = parseInt(e.target.value)
-                      if (!isNaN(n) && n >= 1) setMaxPorDominio(n)
+                      if (!isNaN(n) && n >= 1 && n <= 50) setMaxPorDominio(n)
                     }}
-                    placeholder="nº"
-                    className={`w-14 text-center text-xs border rounded-md px-2 py-1 outline-none transition-colors ${
-                      ![1,2,3,5].includes(maxPorDominio) && maxPorDominio > 0
+                    placeholder="1–50"
+                    title="Número personalizado (máx. 50)"
+                    className={`w-16 text-center text-xs border rounded-md px-2 py-1 outline-none transition-colors ${
+                      ![1,3,5,10,20].includes(maxPorDominio) && maxPorDominio > 0
                         ? 'bg-orange-500 text-white border-orange-500'
                         : 'text-gray-500 border-gray-200 focus:border-orange-400'
                     }`}
                   />
-                  <button
-                    onClick={() => { setMaxPorDominio(0); setMaxPorDominioInput('') }}
-                    className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
-                      maxPorDominio === 0
-                        ? 'bg-orange-500 text-white border-orange-500'
-                        : 'text-gray-500 border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    Todos
-                  </button>
                 </div>
                 <p className="text-[10px] text-gray-400">
-                  {maxPorDominio === 0 ? 'Sin límite' : `${maxPorDominio} por empresa`}
+                  Máx. {maxPorDominio} por empresa · límite 50 para conservar créditos Hunter
                 </p>
               </div>
 
