@@ -32,7 +32,7 @@ export default function TarjetaContacto({ contacto }: TarjetaContactoProps) {
       <p className="text-xs text-gray-400 font-mono">{contacto.email}</p>
 
       {contacto.asunto_generado && (
-        <p className="text-xs text-gray-500 italic truncate">"{contacto.asunto_generado}"</p>
+        <p className="text-xs text-gray-500 italic truncate">&ldquo;{contacto.asunto_generado}&rdquo;</p>
       )}
 
       {contacto.fecha_envio && (
