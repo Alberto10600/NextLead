@@ -9,7 +9,7 @@ import TablaContactos from '@/components/dashboard/TablaContactos'
 import Toast from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
 
-type Fase = 'idle' | 'buscando' | 'listo' | 'generando' | 'enviando' | 'completado'
+type Fase = 'idle' | 'buscando' | 'listo' | 'generando' | 'analizando' | 'enviando' | 'completado'
 
 const estadoBadge: Record<string, { bg: string; text: string; label: string }> = {
   borrador:   { bg: 'bg-gray-100',    text: 'text-gray-500',    label: 'Borrador' },
@@ -42,6 +42,7 @@ export default function DetalleCampanaPage() {
   const [descAgencia, setDescAgencia] = useState('')
   const [sectorObjetivo, setSectorObjetivo] = useState('')
   const [progGeneracion, setProgGeneracion] = useState<{ hecho: number; total: number } | null>(null)
+  const [creandoSeguimientos, setCreandoSeguimientos] = useState(false)
   const [modoBusqueda, setModoBusqueda] = useState<'dominios' | 'sector'>('dominios')
   const [sectorBusqueda, setSectorBusqueda] = useState('')
   const [paisBusqueda, setPaisBusqueda] = useState('España')
@@ -244,6 +245,48 @@ export default function DetalleCampanaPage() {
     setTono(p.tono)
   }
 
+  const analizarContactos = async () => {
+    const sinAnalisis = contactos.filter((c) => !c.analisis_empresa)
+    if (sinAnalisis.length === 0) {
+      setToast({ msg: 'Todos los contactos ya tienen análisis', tipo: 'info' })
+      return
+    }
+    setFase('analizando')
+    try {
+      const res = await fetch('/api/analizar-contactos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contacto_ids: sinAnalisis.map((c) => c.id) }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error analizando')
+      await cargarCampana()
+      setToast({ msg: `${data.analizados} empresas analizadas`, tipo: 'success' })
+    } catch (e: unknown) {
+      setToast({ msg: (e as Error).message, tipo: 'error' })
+    } finally {
+      setFase('listo')
+    }
+  }
+
+  const crearSeguimientos = async () => {
+    setCreandoSeguimientos(true)
+    try {
+      const res = await fetch('/api/crear-seguimientos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campana_id: id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error creando seguimientos')
+      setToast({ msg: data.creados > 0 ? `${data.creados} seguimientos creados para ${data.contactos_afectados} contactos` : data.mensaje, tipo: data.creados > 0 ? 'success' : 'info' })
+    } catch (e: unknown) {
+      setToast({ msg: (e as Error).message, tipo: 'error' })
+    } finally {
+      setCreandoSeguimientos(false)
+    }
+  }
+
   const generarEmails = async () => {
     const sinEmail = contactos.filter((c) => !c.email_generado)
     if (sinEmail.length === 0) {
@@ -346,7 +389,7 @@ export default function DetalleCampanaPage() {
   }
 
   const badge = estadoBadge[campana.estado] || estadoBadge.borrador
-  const enProceso = fase === 'buscando' || fase === 'enviando' || fase === 'generando'
+  const enProceso = fase === 'buscando' || fase === 'enviando' || fase === 'generando' || fase === 'analizando'
   const tieneContactos = contactos.length > 0
   const sinEmailGenerado = contactos.filter((c) => !c.email_generado).length
   // Capa 2: precompute filtered contacts for the filter panel
@@ -389,6 +432,15 @@ export default function DetalleCampanaPage() {
               <span>Enviando{modoEnvio === 'test' ? ' (test)' : ''}...</span>
             </div>
           )}
+          {fase === 'analizando' && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <svg className="animate-spin w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              <span>Analizando empresas...</span>
+            </div>
+          )}
           {fase === 'generando' && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <svg className="animate-spin w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24">
@@ -419,6 +471,19 @@ export default function DetalleCampanaPage() {
           >
             Editar
           </button>
+
+          {/* Analizar empresas */}
+          {tieneContactos && !enProceso && contactos.some((c) => !c.analisis_empresa) && (
+            <button
+              onClick={analizarContactos}
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Analizar · {contactos.filter((c) => !c.analisis_empresa).length}
+            </button>
+          )}
 
           {/* Generar emails con IA */}
           {tieneContactos && !enProceso && sinEmailGenerado > 0 && (
@@ -466,6 +531,25 @@ export default function DetalleCampanaPage() {
                 Enviar · {contactos.filter((c) => c.email_generado && c.estado === 'pendiente').length}
               </button>
             </div>
+          )}
+
+          {/* Crear seguimientos para contactos enviados */}
+          {tieneContactos && !enProceso && contactos.some((c) => c.estado === 'enviado' || c.estado === 'abierto') && (
+            <button
+              onClick={crearSeguimientos}
+              disabled={creandoSeguimientos}
+              title="Crea los seguimientos programados para contactos ya enviados que no los tienen"
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300 disabled:opacity-40 transition-colors"
+            >
+              {creandoSeguimientos ? (
+                <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+                </svg>
+              )}
+              Seguimientos
+            </button>
           )}
 
           {/* Añadir dominios (cuando ya hay contactos) */}
@@ -776,6 +860,52 @@ export default function DetalleCampanaPage() {
                 </div>
               </div>
             </div>
+        )}
+
+        {/* Panel análisis de empresas */}
+        {tieneContactos && contactos.some((c) => c.analisis_empresa) && (
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Análisis de empresas</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {contactos.filter((c) => c.analisis_empresa).length} de {contactos.length} analizadas · los emails se generan usando este análisis
+                </p>
+              </div>
+              {contactos.some((c) => !c.analisis_empresa) && !enProceso && (
+                <button
+                  onClick={analizarContactos}
+                  className="text-xs text-orange-500 hover:text-orange-600 font-medium transition-colors"
+                >
+                  Analizar {contactos.filter((c) => !c.analisis_empresa).length} restantes →
+                </button>
+              )}
+            </div>
+            <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+              {contactos.filter((c) => c.analisis_empresa).map((c) => (
+                <div key={c.id} className="px-5 py-3 flex items-start gap-4">
+                  <div className="w-32 shrink-0">
+                    <p className="text-xs font-medium text-gray-700 truncate">{c.empresa || c.dominio}</p>
+                    {c.analisis_empresa?.tamano && (
+                      <span className="inline-block mt-0.5 text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                        {c.analisis_empresa.tamano}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    {c.analisis_empresa?.actividad && (
+                      <p className="text-xs text-gray-600 leading-relaxed">{c.analisis_empresa.actividad}</p>
+                    )}
+                    {c.analisis_empresa?.dolor && (
+                      <p className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded leading-relaxed">
+                        <span className="font-medium">Punto de dolor:</span> {c.analisis_empresa.dolor}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Panel generar emails con IA */}

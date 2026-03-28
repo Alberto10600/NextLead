@@ -80,6 +80,7 @@ export interface Contacto {
   dominio?: string
   linkedin_url?: string
   contexto_web?: string
+  analisis_empresa?: { actividad?: string; tamano?: string; dolor?: string; resumen?: string } | null
   asunto_generado?: string
   email_generado?: string
   estado: EstadoContacto

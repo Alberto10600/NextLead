@@ -31,23 +31,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Error leyendo contactos' }, { status: 500 })
   }
 
+  // Cache análisis por dominio para no repetir si varios contactos comparten dominio
+  const analisisCache = new Map<string, { actividad?: string; tamano?: string; dolor?: string; resumen?: string }>()
+
   let generados = 0
   const errores: string[] = []
 
   for (const contacto of contactos) {
     await sleep(300)
 
-    let contextoWeb: string | null = null
     let analisisEmpresa: { actividad?: string; tamano?: string; dolor?: string; resumen?: string } | undefined
 
-    if (contacto.dominio) {
-      contextoWeb = await scrapearWeb(contacto.dominio).catch(() => null)
-      if (contextoWeb) {
-        try {
-          const analisisRaw = await analizarEmpresa(contacto.dominio, contextoWeb)
-          analisisEmpresa = JSON.parse(analisisRaw)
-        } catch {
-          // Analysis failed — fall back to raw web context
+    // 1. Use stored analysis if available (pre-analyzed via /api/analizar-contactos)
+    if (contacto.analisis_empresa) {
+      analisisEmpresa = contacto.analisis_empresa
+    } else if (contacto.dominio) {
+      // 2. Check in-request cache (same domain, multiple contacts)
+      if (analisisCache.has(contacto.dominio)) {
+        analisisEmpresa = analisisCache.get(contacto.dominio)
+      } else {
+        // 3. Scrape + analyze on the fly as fallback
+        const contextoWeb = await scrapearWeb(contacto.dominio).catch(() => null)
+        if (contextoWeb) {
+          try {
+            const raw = await analizarEmpresa(contacto.dominio, contextoWeb)
+            analisisEmpresa = JSON.parse(raw)
+            analisisCache.set(contacto.dominio, analisisEmpresa!)
+            // Save for future use
+            await supabase.from('contactos').update({ analisis_empresa: analisisEmpresa }).eq('id', contacto.id).eq('user_id', user.id)
+          } catch {
+            // Analysis failed — generate without it
+          }
         }
       }
     }
@@ -59,7 +73,6 @@ export async function POST(request: Request) {
         cargo: contacto.cargo,
         empresa: contacto.empresa,
         sector,
-        contextoWeb: contextoWeb || undefined,
         analisisEmpresa,
         descripcionAgencia: descripcion_agencia,
         tono,
@@ -70,7 +83,6 @@ export async function POST(request: Request) {
         .update({
           asunto_generado: email.asunto,
           email_generado: email.cuerpo,
-          contexto_web: contextoWeb,
         })
         .eq('id', contacto.id)
         .eq('user_id', user.id)
