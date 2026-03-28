@@ -126,7 +126,7 @@ export async function POST(request: Request) {
       ? campana.dias_seguimiento
       : [3, 7, 14]
     for (let i = 0; i < diasSeguimiento.length; i++) {
-      await supabase.from('seguimientos').insert({
+      const { error: segError } = await supabase.from('seguimientos').insert({
         contacto_id: contacto.id,
         campana_id,
         user_id: user.id,
@@ -134,6 +134,9 @@ export async function POST(request: Request) {
         estado: 'pendiente',
         fecha_programada: añadirDias(new Date(), diasSeguimiento[i]).toISOString(),
       })
+      if (segError) {
+        errores.push(`Seguimiento ${i + 1} para ${contacto.email}: ${segError.message}`)
+      }
     }
 
     enviados++
