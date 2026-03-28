@@ -10,7 +10,7 @@ interface TarjetaEstadisticaProps {
 
 export default function TarjetaEstadistica({ titulo, valor, subtitulo, icono, href }: TarjetaEstadisticaProps) {
   const content = (
-    <div className={`group relative bg-white border border-gray-200 rounded-xl p-5 overflow-hidden transition-all duration-200 ${href ? 'hover:border-orange-200 hover:shadow-sm cursor-pointer' : ''}`}>
+    <div className={`group relative bg-white border border-gray-200 rounded-xl p-5 overflow-hidden transition-all duration-200 h-full ${href ? 'hover:border-orange-200 hover:shadow-sm cursor-pointer' : ''}`}>
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">{titulo}</p>
@@ -29,7 +29,7 @@ export default function TarjetaEstadistica({ titulo, valor, subtitulo, icono, hr
   )
 
   if (href) {
-    return <Link href={href} className="block focus:outline-none">{content}</Link>
+    return <Link href={href} className="block h-full focus:outline-none">{content}</Link>
   }
   return content
 }

@@ -15,8 +15,7 @@ export default function LoginPage() {
           {/* Brand */}
           <div className="text-center mb-8">
             <Link href="/" className="inline-block text-2xl font-bold tracking-tight mb-6">
-              <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">Next</span>
-              <span className="text-gray-900">Lead</span>
+              Arr<span className="text-orange-500">ivo</span>
             </Link>
             <h1 className="text-xl font-semibold text-gray-900 mb-1.5">Bienvenido de nuevo</h1>
             <p className="text-sm text-gray-500">Inicia sesión en tu cuenta</p>

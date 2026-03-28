@@ -44,7 +44,7 @@ export default async function DashboardPage() {
       <div className="p-6 space-y-8 max-w-6xl">
 
         {/* Stats grid */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4 items-stretch">
           <TarjetaEstadistica titulo="Campañas activas"  valor={campañasActivas} icono="◎" href="/dashboard/campanas" />
           <TarjetaEstadistica titulo="Emails enviados"   valor={totalEnviados}   icono="✉" href="/dashboard/contactos" />
           <TarjetaEstadistica

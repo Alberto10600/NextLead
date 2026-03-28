@@ -59,7 +59,7 @@ export default function CampanasPage() {
         </div>
         <Link
           href="/dashboard/campanas/nueva"
-          className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-gray-900 text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
+          className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-150"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -88,7 +88,7 @@ export default function CampanasPage() {
             </p>
             <Link
               href="/dashboard/campanas/nueva"
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-gray-900 text-sm font-medium px-5 py-2.5 rounded-md transition-colors duration-150"
+              className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors duration-150"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

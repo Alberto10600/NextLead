@@ -48,9 +48,14 @@ export default function FormularioLogin() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-gray-500 tracking-wide">
-          Contraseña
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-gray-500 tracking-wide">
+            Contraseña
+          </label>
+          <a href="/reset-password" className="text-xs text-orange-500 hover:text-orange-600 transition-colors">
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
         <input
           type="password"
           placeholder="••••••••"
