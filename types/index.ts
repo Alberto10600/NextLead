@@ -36,6 +36,20 @@ export interface Perfil {
   created_at: string
 }
 
+export interface BusquedaHistorial {
+  fecha: string
+  dominios: string[]
+  encontrados: number
+  guardados: number
+  filtro_cargo?: string
+}
+
+export interface PreferenciasBusqueda {
+  max_por_dominio?: number
+  filtro_cargo?: string
+  historial?: BusquedaHistorial[]
+}
+
 export interface Campana {
   id: string
   user_id: string
@@ -46,6 +60,7 @@ export interface Campana {
   cargos_objetivo: string[]
   dominios?: string[]
   filtros_hunter?: FiltrosHunter
+  preferencias_busqueda?: PreferenciasBusqueda
   estado: EstadoCampana
   total_contactos: number
   total_enviados: number

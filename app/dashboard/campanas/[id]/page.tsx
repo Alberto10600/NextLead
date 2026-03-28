@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import type { Campana, Contacto, Plantilla, Tono } from '@/types'
+import type { Campana, Contacto, Plantilla, Tono, PreferenciasBusqueda, BusquedaHistorial } from '@/types'
 import type { HunterContacto } from '@/lib/hunter'
 import TablaContactos from '@/components/dashboard/TablaContactos'
 import Toast from '@/components/ui/Toast'
@@ -49,7 +49,10 @@ export default function DetalleCampanaPage() {
   const [regionBusqueda, setRegionBusqueda] = useState('')
   const [buscandoSector, setBuscandoSector] = useState(false)
   const [sugirendoPerfiles, setSugirendoPerfiles] = useState(false)
+  const [perfilesSugeridos, setPerfilesSugeridos] = useState<string[]>([])  // chips sugeridos por IA
   const [maxPorDominioInput, setMaxPorDominioInput] = useState<string>('3')  // custom text input
+  const [historialBusquedas, setHistorialBusquedas] = useState<BusquedaHistorial[]>([])
+  const [mostrarHistorial, setMostrarHistorial] = useState(false)
   const [dominiosSugeridos, setDominiosSugeridos] = useState<string[]>([])
   const [modoEnvio, setModoEnvio] = useState<'test' | 'real'>('test')
   // Capa 1: límite de contactos por dominio
@@ -87,6 +90,13 @@ export default function DetalleCampanaPage() {
       if (data.campana?.tono) setTono(data.campana.tono as Tono)
       if (data.campana?.dias_seguimiento?.length) setDiasSeguimiento(data.campana.dias_seguimiento)
       if (data.campana?.limite_diario !== undefined) setLimiteDiario(data.campana.limite_diario)
+      // Cargar preferencias de búsqueda guardadas
+      const prefs = data.campana?.preferencias_busqueda
+      if (prefs) {
+        if (prefs.max_por_dominio) { setMaxPorDominio(prefs.max_por_dominio); setMaxPorDominioInput(String(prefs.max_por_dominio)) }
+        if (prefs.filtro_cargo) setFiltroCargo(prefs.filtro_cargo)
+        if (prefs.historial?.length) setHistorialBusquedas(prefs.historial)
+      }
     }
     setLoading(false)
   }, [id])
@@ -97,6 +107,34 @@ export default function DetalleCampanaPage() {
   useEffect(() => {
     fetch('/api/plantillas').then(r => r.json()).then(d => setPlantillas(d.plantillas || []))
   }, [])
+
+  // Auto-save description with debounce
+  useEffect(() => {
+    if (!campana || !descAgencia.trim()) return
+    const timer = setTimeout(() => {
+      fetch(`/api/campanas/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descripcion_agencia: descAgencia }),
+      })
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [descAgencia]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const guardarPreferencias = async (extra?: Partial<PreferenciasBusqueda>) => {
+    const nuevoHistorial = extra?.historial ?? historialBusquedas
+    const prefs: PreferenciasBusqueda = {
+      max_por_dominio: maxPorDominio,
+      filtro_cargo: filtroCargo || undefined,
+      historial: nuevoHistorial.slice(0, 5),
+      ...extra,
+    }
+    await fetch(`/api/campanas/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preferencias_busqueda: prefs }),
+    })
+  }
 
   const dominiosParsed = parseDominios(dominiosTexto)
   const dominiosNuevosParsed = parseDominios(dominiosNuevos)
@@ -189,6 +227,8 @@ export default function DetalleCampanaPage() {
       setContactosPrevio(data.contactos)
       setStats({ sinResultados: data.dominios_sin_resultados?.length || 0 })
       setFase('listo')
+      // Guardar preferencias actuales
+      await guardarPreferencias()
     } catch (e: unknown) {
       setToast({ msg: (e as Error).message, tipo: 'error' })
       setFase(contactos.length > 0 ? 'listo' : 'idle')
@@ -218,6 +258,17 @@ export default function DetalleCampanaPage() {
       setDominiosNuevos('')
       const cola = data.en_cola > 0 ? ` · ${data.en_cola} superan el límite del plan` : ''
       setToast({ msg: `${data.contactos.length} contactos guardados${cola}`, tipo: 'success' })
+      // Añadir entrada al historial
+      const entrada: BusquedaHistorial = {
+        fecha: new Date().toISOString(),
+        dominios: dominiosParsed.slice(0, 10),
+        encontrados: contactosFiltradosPrevio.length + contactosExcluidosPrevio,
+        guardados: data.contactos.length,
+        filtro_cargo: filtroCargo || undefined,
+      }
+      const nuevoHistorial = [entrada, ...historialBusquedas].slice(0, 5)
+      setHistorialBusquedas(nuevoHistorial)
+      await guardarPreferencias({ historial: nuevoHistorial })
     } catch (e: unknown) {
       setToast({ msg: (e as Error).message, tipo: 'error' })
       setFase(contactos.length > 0 ? 'listo' : 'idle')
@@ -292,8 +343,8 @@ export default function DetalleCampanaPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       if (data.perfiles?.length) {
-        setFiltroCargo(data.perfiles.join(', '))
-        setToast({ msg: `${data.perfiles.length} perfiles sugeridos`, tipo: 'success' })
+        setPerfilesSugeridos(data.perfiles)
+        setToast({ msg: `${data.perfiles.length} perfiles sugeridos — haz clic para activarlos`, tipo: 'success' })
       }
     } catch (e: unknown) {
       setToast({ msg: (e as Error).message, tipo: 'error' })
@@ -914,6 +965,43 @@ export default function DetalleCampanaPage() {
                   </div>
                 )}
 
+                {/* Chips sugeridos por IA — clickables para activar/desactivar */}
+                {perfilesSugeridos.length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-[10px] text-gray-400 mb-1.5">Sugeridos por IA — haz clic para activar:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {perfilesSugeridos.map((p) => {
+                        const activos = filtroCargo.split(',').map(x => x.trim()).filter(Boolean)
+                        const activo = activos.some(a => a.toLowerCase() === p.toLowerCase())
+                        return (
+                          <button
+                            key={p}
+                            onClick={() => {
+                              const lista = filtroCargo.split(',').map(x => x.trim()).filter(Boolean)
+                              if (activo) {
+                                setFiltroCargo(lista.filter(x => x.toLowerCase() !== p.toLowerCase()).join(', '))
+                              } else {
+                                setFiltroCargo([...lista, p].join(', '))
+                              }
+                            }}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all ${
+                              activo
+                                ? 'bg-orange-500 text-white border-orange-500'
+                                : 'bg-white text-gray-500 border-gray-200 hover:border-orange-300 hover:text-orange-500'
+                            }`}
+                          >
+                            {activo && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                            {p}
+                          </button>
+                        )
+                      })}
+                      <button onClick={() => setPerfilesSugeridos([])} className="text-[10px] text-gray-300 hover:text-gray-400 ml-1">
+                        ocultar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <input
                   value={filtroCargo}
                   onChange={(e) => setFiltroCargo(e.target.value)}
@@ -964,6 +1052,61 @@ export default function DetalleCampanaPage() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Historial de búsquedas */}
+        {historialBusquedas.length > 0 && !tieneContactos && !enProceso && (
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setMostrarHistorial((v) => !v)}
+              className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span className="text-xs font-medium text-gray-600">Búsquedas anteriores</span>
+                <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{historialBusquedas.length}</span>
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`text-gray-400 transition-transform ${mostrarHistorial ? 'rotate-180' : ''}`}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            {mostrarHistorial && (
+              <div className="border-t border-gray-100 divide-y divide-gray-50">
+                {historialBusquedas.map((h, i) => (
+                  <div key={i} className="px-5 py-3 flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-gray-500 font-mono truncate">
+                          {h.dominios.slice(0, 3).join(', ')}{h.dominios.length > 3 ? ` +${h.dominios.length - 3}` : ''}
+                        </span>
+                        {h.filtro_cargo && (
+                          <span className="text-[10px] text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">
+                            {h.filtro_cargo.split(',')[0].trim()}{h.filtro_cargo.split(',').length > 1 ? ` +${h.filtro_cargo.split(',').length - 1}` : ''}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {new Date(h.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                        {' · '}{h.encontrados} encontrados · {h.guardados} guardados
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setDominiosTexto(h.dominios.join('\n'))
+                        if (h.filtro_cargo) setFiltroCargo(h.filtro_cargo)
+                        setMostrarHistorial(false)
+                      }}
+                      className="text-[11px] text-orange-500 hover:text-orange-600 font-medium shrink-0"
+                    >
+                      Repetir →
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

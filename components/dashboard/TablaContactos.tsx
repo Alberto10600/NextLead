@@ -41,6 +41,22 @@ function esGenerico(c: Contacto): boolean {
   return GENERIC_PREFIXES.some((p) => local === p || local.startsWith(p + '.') || local.startsWith(p + '_'))
 }
 
+type Calidad = 'alta' | 'media' | 'baja'
+
+function calcularCalidad(c: Contacto): Calidad {
+  const tieneCargo = !!c.cargo?.trim()
+  const tieneLinkedin = !!c.linkedin_url?.trim()
+  if (tieneCargo && tieneLinkedin) return 'alta'
+  if (tieneCargo || tieneLinkedin) return 'media'
+  return 'baja'
+}
+
+const calidadStyles: Record<Calidad, { dot: string; label: string; title: string }> = {
+  alta:  { dot: 'bg-emerald-400', label: 'Alta',  title: 'Cargo + LinkedIn disponibles' },
+  media: { dot: 'bg-amber-400',   label: 'Media', title: 'Cargo o LinkedIn disponible' },
+  baja:  { dot: 'bg-gray-300',    label: 'Baja',  title: 'Solo email disponible' },
+}
+
 type Tab = 'todos' | 'decisores' | 'genericos' | 'abiertos'
 
 const PAGE_SIZE = 50
@@ -214,6 +230,7 @@ export default function TablaContactos({ contactos: contactosIniciales, onExclui
               {tieneSector && (
                 <th className="text-left px-5 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Sector</th>
               )}
+              <th className="text-left px-5 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Calidad</th>
               <th className="text-left px-5 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Estado</th>
               <th className="px-5 py-3 w-32" />
             </tr>
@@ -221,7 +238,7 @@ export default function TablaContactos({ contactos: contactosIniciales, onExclui
           <tbody>
             {contactosPagina.length === 0 && (
               <tr>
-                <td colSpan={tieneSector ? 7 : 6} className="px-5 py-16 text-center text-gray-400 text-sm">
+                <td colSpan={tieneSector ? 8 : 7} className="px-5 py-16 text-center text-gray-400 text-sm">
                   {busqueda ? `Sin resultados para "${busqueda}"` : 'No hay contactos en esta categoría'}
                 </td>
               </tr>
@@ -230,6 +247,8 @@ export default function TablaContactos({ contactos: contactosIniciales, onExclui
               const badge = estadoStyles[c.estado] || estadoStyles.pendiente
               const decisor = esDecisionMaker(c)
               const esNoContactar = c.estado === 'no_contactar'
+              const calidad = calcularCalidad(c)
+              const calidadStyle = calidadStyles[calidad]
               return (
                 <tr
                   key={c.id}
@@ -255,6 +274,15 @@ export default function TablaContactos({ contactos: contactosIniciales, onExclui
                   {tieneSector && (
                     <td className="px-5 py-3.5 text-xs text-gray-400">{c.sector || '—'}</td>
                   )}
+                  <td className="px-5 py-3.5">
+                    <span
+                      title={calidadStyle.title}
+                      className="inline-flex items-center gap-1.5 text-[10px] font-medium text-gray-500 cursor-default"
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${calidadStyle.dot}`} />
+                      {calidadStyle.label}
+                    </span>
+                  </td>
                   <td className="px-5 py-3.5">
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
