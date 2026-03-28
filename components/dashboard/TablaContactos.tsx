@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { Contacto } from '@/types'
 import ModalEmail from './ModalEmail'
 
@@ -80,6 +80,11 @@ export default function TablaContactos({ contactos: contactosIniciales, onExclui
   const [busqueda, setBusqueda] = useState('')
   const [pagina, setPagina] = useState(0)
   const [marcandoOptOut, setMarcandoOptOut] = useState<string | null>(null)
+
+  // Sync when parent refreshes the contacts list (e.g. after email generation)
+  useEffect(() => {
+    setContactos(contactosIniciales)
+  }, [contactosIniciales])
 
   const tieneSector = useMemo(() => contactos.some((c) => c.sector), [contactos])
   const decisores = useMemo(() => contactos.filter(esDecisionMaker), [contactos])

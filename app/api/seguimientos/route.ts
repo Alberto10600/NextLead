@@ -24,12 +24,19 @@ export async function POST(request: Request) {
 
   const nombreRemitente = perfil?.agencia || perfil?.nombre || undefined
 
-  const { data: seguimientos } = await supabase
+  let query = supabase
     .from('seguimientos')
     .select('*, contactos(*), campanas(descripcion_agencia)')
     .eq('user_id', user.id)
     .eq('estado', 'pendiente')
-    .lte('fecha_programada', new Date().toISOString())
+
+  // In test mode show all pending follow-ups regardless of scheduled date
+  // In real mode only process follow-ups due now or overdue
+  if (modo === 'real') {
+    query = query.lte('fecha_programada', new Date().toISOString())
+  }
+
+  const { data: seguimientos } = await query
 
   if (!seguimientos || seguimientos.length === 0) {
     return NextResponse.json({ procesados: 0, cancelados: 0, mensaje: 'No hay seguimientos pendientes' })
