@@ -118,6 +118,25 @@ export interface HistorialContacto {
   total_contactos: number
 }
 
+export interface Equipo {
+  id: string
+  nombre: string
+  owner_id: string
+  created_at: string
+}
+
+export interface MiembroEquipo {
+  id: string
+  equipo_id: string
+  user_id: string | null
+  email: string
+  rol: 'admin' | 'miembro'
+  estado: 'pendiente' | 'activo'
+  token: string
+  invited_by: string | null
+  created_at: string
+}
+
 export const LIMITES_PLAN: Record<Plan, { precio_mensual: number; contactos_mes: number; campanas_activas: number; seguimientos: number }> = {
   free:     { precio_mensual: 0,   contactos_mes: 100,   campanas_activas: 1,   seguimientos: 0 },
   starter:  { precio_mensual: 29,  contactos_mes: 500,   campanas_activas: 3,   seguimientos: 1 },
