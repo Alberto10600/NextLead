@@ -1,22 +1,31 @@
 import Stripe from 'stripe'
 import type { Plan } from '@/types'
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia',
-})
+// Lazy instantiation — avoids "no apiKey" error during Next.js build
+function getStripe(): Stripe {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY no configurada')
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2026-03-25.dahlia',
+  })
+}
 
 const PRICE_IDS: Record<Exclude<Plan, 'free'>, string> = {
-  starter:  process.env.STRIPE_PRICE_STARTER!,
-  pro:      process.env.STRIPE_PRICE_PRO!,
-  business: process.env.STRIPE_PRICE_BUSINESS!,
+  starter:  process.env.STRIPE_PRICE_STARTER  || '',
+  pro:      process.env.STRIPE_PRICE_PRO      || '',
+  business: process.env.STRIPE_PRICE_BUSINESS || '',
 }
+
+// For webhook signature verification
+export const stripe = { webhooks: { constructEvent: (...args: Parameters<Stripe['webhooks']['constructEvent']>) => getStripe().webhooks.constructEvent(...args) } }
 
 export function getPriceId(plan: Exclude<Plan, 'free'>): string {
   return PRICE_IDS[plan]
 }
 
 export async function crearClienteStripe(email: string): Promise<string> {
-  const customer = await stripe.customers.create({ email })
+  const customer = await getStripe().customers.create({ email })
   return customer.id
 }
 
@@ -25,7 +34,7 @@ export async function crearSesionCheckout(params: {
   plan: Exclude<Plan, 'free'>
   userId: string
 }): Promise<string> {
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     customer: params.customerId,
     payment_method_types: ['card'],
     line_items: [{ price: getPriceId(params.plan), quantity: 1 }],
@@ -39,7 +48,7 @@ export async function crearSesionCheckout(params: {
 }
 
 export async function crearPortalCliente(customerId: string): Promise<string> {
-  const session = await stripe.billingPortal.sessions.create({
+  const session = await getStripe().billingPortal.sessions.create({
     customer: customerId,
     return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
   })
