@@ -59,7 +59,7 @@ export default function DetalleCampanaPage() {
   const [maxPorDominio, setMaxPorDominio] = useState<number>(3)
   // Capa 2: contactos pendientes de filtrado (entre Hunter y guardar)
   const [contactosPrevio, setContactosPrevio] = useState<HunterContacto[]>([])
-  const [excluirGenericos, setExcluirGenericos] = useState(true)
+
   const [filtroCargo, setFiltroCargo] = useState('')
   // Capa 3: selección de dominios sugeridos por IA
   const [dominiosSeleccionados, setDominiosSeleccionados] = useState<Set<string>>(new Set())
