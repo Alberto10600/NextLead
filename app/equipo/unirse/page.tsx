@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -8,7 +8,7 @@ import Spinner from '@/components/ui/Spinner'
 
 type Estado = 'cargando' | 'listo' | 'invalido' | 'ya_activo' | 'aceptado' | 'error'
 
-export default function UnirseEquipoPage() {
+function UnirseEquipoContent() {
   const params = useSearchParams()
   const router = useRouter()
   const token = params.get('token') || ''
@@ -203,5 +203,17 @@ export default function UnirseEquipoPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function UnirseEquipoPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <UnirseEquipoContent />
+    </Suspense>
   )
 }
