@@ -670,7 +670,7 @@ export default function DetalleCampanaPage() {
                                   onChange={() => {
                                     setDominiosSeleccionados(prev => {
                                       const next = new Set(prev)
-                                      sel ? next.delete(d) : next.add(d)
+                                      if (sel) { next.delete(d) } else { next.add(d) }
                                       return next
                                     })
                                   }}
