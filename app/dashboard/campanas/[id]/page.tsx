@@ -110,25 +110,54 @@ export default function DetalleCampanaPage() {
     })
   }
 
-  // Prefijos de email genérico a excluir
+  // Prefijos de email genérico a excluir (siempre activo, silencioso)
   const EMAILS_GENERICOS = ['info', 'contact', 'contacto', 'hola', 'hello', 'admin', 'soporte',
     'support', 'noreply', 'no-reply', 'ventas', 'marketing', 'ayuda', 'help', 'accounts',
     'billing', 'reception', 'recepcion', 'general', 'enquiries', 'sales', 'office', 'oficina']
 
+  // Sinónimos para que "CEO" también coincida con "Chief Executive Officer", "Founder", etc.
+  const SINONIMOS_CARGO: Record<string, string[]> = {
+    'ceo':       ['chief executive', 'director ejecutivo', 'director general', 'founder', 'cofound', 'co-found', 'fundador', 'presidente'],
+    'cto':       ['chief technology', 'director de tecnología', 'director tecnológico', 'tech lead', 'head of tech', 'head of engineering'],
+    'cmo':       ['chief marketing', 'director de marketing', 'marketing director', 'head of marketing', 'vp marketing'],
+    'cfo':       ['chief financial', 'director financiero', 'finance director', 'head of finance'],
+    'coo':       ['chief operating', 'director de operaciones', 'operations director'],
+    'cso':       ['chief sales', 'director de ventas', 'sales director', 'head of sales', 'vp sales'],
+    'founder':   ['fundador', 'cofound', 'co-found', 'ceo', 'owner', 'propietario'],
+    'director':  ['head of', 'vp ', 'vice president', 'responsable de'],
+    'manager':   ['gerente', 'responsable', 'lead ', 'jefe de'],
+    'growth':    ['crecimiento', 'adquisición', 'acquisition'],
+  }
+
   const aplicarFiltros = (lista: HunterContacto[]) => {
     let filtrada = lista
-    if (excluirGenericos) {
-      filtrada = filtrada.filter((c) => {
-        const prefijo = c.email.split('@')[0].toLowerCase()
-        return !EMAILS_GENERICOS.some((g) => prefijo === g || prefijo.startsWith(g + '.'))
-      })
-    }
+
+    // Excluir genéricos siempre (silencioso)
+    filtrada = filtrada.filter((c) => {
+      const prefijo = c.email.split('@')[0].toLowerCase()
+      return !EMAILS_GENERICOS.some((g) => prefijo === g || prefijo.startsWith(g + '.'))
+    })
+
     if (filtroCargo.trim()) {
       const keywords = filtroCargo.toLowerCase().split(',').map((k) => k.trim()).filter(Boolean)
       filtrada = filtrada.filter((c) => {
-        if (!c.cargo) return false
-        const cargo = c.cargo.toLowerCase()
-        return keywords.some((k) => cargo.includes(k))
+        // Contactos sin cargo: los incluimos si buscamos roles muy genéricos,
+        // los excluimos si el filtro es específico
+        const cargo = (c.cargo || '').toLowerCase()
+        if (!cargo) {
+          // Sin cargo → incluir solo si algún keyword es muy corto (probable error de filtro)
+          return false
+        }
+        return keywords.some((kw) => {
+          // Coincidencia directa
+          if (cargo.includes(kw)) return true
+          // Coincidencia por sinónimos
+          const sinonimos = SINONIMOS_CARGO[kw] || []
+          if (sinonimos.some((s) => cargo.includes(s))) return true
+          // Si el cargo contiene el kw como palabra completa (ej "ceo" en "ceo & founder")
+          const regex = new RegExp(`\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
+          return regex.test(cargo)
+        })
       })
     }
     return filtrada
@@ -644,62 +673,11 @@ export default function DetalleCampanaPage() {
             </div>
 
             <div className="p-5">
-              {/* Perfiles objetivo — ANTES de buscar */}
-              <div className="mb-4 pb-4 border-b border-gray-100">
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-medium text-gray-500">
-                    Perfiles objetivo
-                    <span className="ml-1 text-gray-300">(filtra antes de buscar)</span>
-                  </label>
-                  <button
-                    onClick={sugerirPerfiles}
-                    disabled={sugirendoPerfiles}
-                    title={campana?.descripcion_agencia || descAgencia ? 'Sugerir perfiles con IA' : 'Añade la descripción de tu servicio en "Generar emails IA" para usar esta función'}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-orange-500 hover:text-orange-600 disabled:opacity-50 transition-colors"
-                  >
-                    {sugirendoPerfiles ? (
-                      <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
-                    ) : (
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-                      </svg>
-                    )}
-                    Sugerir con IA
-                  </button>
-                </div>
-                <input
-                  value={filtroCargo}
-                  onChange={(e) => setFiltroCargo(e.target.value)}
-                  placeholder="ej. CEO, Director de Marketing, CMO, Growth Manager..."
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
-                />
-                <p className="text-[10px] text-gray-400 mt-1.5">
-                  Cargos separados por comas. Solo se guardarán contactos que coincidan. Vacío = todos.
-                </p>
-                {/* Tag chips si hay perfiles */}
-                {filtroCargo.trim() && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {filtroCargo.split(',').map((p) => p.trim()).filter(Boolean).map((p) => (
-                      <span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-full text-[10px] font-medium">
-                        {p}
-                        <button
-                          onClick={() => setFiltroCargo((prev) =>
-                            prev.split(',').map(x => x.trim()).filter(x => x !== p).join(', ')
-                          )}
-                          className="hover:text-orange-800"
-                        >×</button>
-                      </span>
-                    ))}
-                    <button onClick={() => setFiltroCargo('')} className="text-[10px] text-gray-300 hover:text-gray-500 ml-1">
-                      limpiar todo
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Contactos por empresa — número personalizado */}
-              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
-                <label className="text-xs font-medium text-gray-500 shrink-0">Máx. por empresa</label>
+              {/* Cuántos contactos traer — único ajuste previo a buscar */}
+              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+                <label className="text-xs font-medium text-gray-500 shrink-0">
+                  Contactos por empresa
+                </label>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {[1, 3, 5, 10, 20].map((n) => (
                     <button
@@ -724,30 +702,17 @@ export default function DetalleCampanaPage() {
                       const n = parseInt(e.target.value)
                       if (!isNaN(n) && n >= 1 && n <= 50) setMaxPorDominio(n)
                     }}
-                    placeholder="1–50"
+                    placeholder="otro"
                     title="Número personalizado (máx. 50)"
-                    className={`w-16 text-center text-xs border rounded-md px-2 py-1 outline-none transition-colors ${
+                    className={`w-14 text-center text-xs border rounded-md px-2 py-1 outline-none transition-colors ${
                       ![1,3,5,10,20].includes(maxPorDominio) && maxPorDominio > 0
                         ? 'bg-orange-500 text-white border-orange-500'
                         : 'text-gray-500 border-gray-200 focus:border-orange-400'
                     }`}
                   />
                 </div>
-                <p className="text-[10px] text-gray-400">
-                  Máx. {maxPorDominio} por empresa · límite 50 para conservar créditos Hunter
-                </p>
+                <p className="text-[10px] text-gray-400">{maxPorDominio} por empresa · máx. 50</p>
               </div>
-
-              {/* Excluir genéricos — toggle compacto */}
-              <label className="flex items-center gap-2 cursor-pointer mb-4 pb-3 border-b border-gray-100">
-                <input
-                  type="checkbox"
-                  checked={excluirGenericos}
-                  onChange={(e) => setExcluirGenericos(e.target.checked)}
-                  className="accent-orange-500"
-                />
-                <span className="text-xs text-gray-600">Excluir emails genéricos <span className="text-gray-400">(info@, admin@, ventas@...)</span></span>
-              </label>
 
               {modoBusqueda === 'dominios' ? (
                 <>
@@ -899,77 +864,107 @@ export default function DetalleCampanaPage() {
 
         {/* Capa 2: Panel de filtrado pre-guardado */}
         {contactosPrevio.length > 0 && (
-            <div className="bg-white border border-orange-200 rounded-lg overflow-hidden">
-              <div className="px-5 py-4 border-b border-orange-100 bg-orange-50/40 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Hunter encontró {contactosPrevio.length} contactos — revisa antes de guardar
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">Filtra para quedarte solo con los más relevantes</p>
-                </div>
-                <button
-                  onClick={() => setContactosPrevio([])}
-                  className="text-gray-300 hover:text-gray-500 transition-colors"
-                >
-                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+          <div className="bg-white border border-orange-200 rounded-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-orange-100 bg-orange-50/40 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">
+                  Hunter encontró {contactosPrevio.length} contactos
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Emails genéricos ya excluidos · filtra por cargo para quedarte con los más relevantes
+                </p>
               </div>
-              <div className="px-5 py-4 space-y-4">
-                {/* Excluir genéricos */}
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={excluirGenericos}
-                    onChange={(e) => setExcluirGenericos(e.target.checked)}
-                    className="mt-0.5 accent-orange-500"
-                  />
-                  <div>
-                    <p className="text-sm text-gray-800 group-hover:text-gray-900 transition-colors">
-                      Excluir emails genéricos
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      info@, contacto@, admin@, soporte@, ventas@... No son decisores.
-                    </p>
-                  </div>
-                </label>
+              <button onClick={() => setContactosPrevio([])} className="text-gray-300 hover:text-gray-500 transition-colors">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4">
 
-                {/* Filtro por cargo */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                    Solo incluir contactos cuyo cargo contenga (opcional)
+              {/* Filtro de perfiles con IA */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-medium text-gray-700">
+                    ¿Qué perfiles quieres conservar?
+                    <span className="text-gray-400 ml-1 font-normal">— vacío = guardar todos</span>
                   </label>
-                  <input
-                    value={filtroCargo}
-                    onChange={(e) => setFiltroCargo(e.target.value)}
-                    placeholder="ej. director, ceo, marketing, manager"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
-                  />
-                  <p className="text-[10px] text-gray-400 mt-1">Separados por comas. Vacío = incluir todos los cargos.</p>
-                </div>
-
-                {/* Preview conteo */}
-                <div className={`flex items-center justify-between px-4 py-3 rounded-lg ${contactosFiltradosPrevio.length > 0 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                  <div>
-                    <p className={`text-sm font-semibold ${contactosFiltradosPrevio.length > 0 ? 'text-green-700' : 'text-red-700'}`}>
-                      {contactosFiltradosPrevio.length} contactos pasarán el filtro
-                    </p>
-                    {contactosExcluidosPrevio > 0 && (
-                      <p className="text-xs text-gray-400 mt-0.5">{contactosExcluidosPrevio} excluidos por los filtros actuales</p>
-                    )}
-                  </div>
                   <button
-                    onClick={guardarContactosFiltrados}
-                    disabled={contactosFiltradosPrevio.length === 0 || fase === 'buscando'}
-                    className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+                    onClick={sugerirPerfiles}
+                    disabled={sugirendoPerfiles}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-orange-500 hover:text-orange-600 disabled:opacity-50 transition-colors"
                   >
-                    {fase === 'buscando' ? <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> : null}
-                    Guardar {contactosFiltradosPrevio.length} contactos
+                    {sugirendoPerfiles
+                      ? <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                      : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    }
+                    Sugerir con IA
                   </button>
                 </div>
+
+                {/* Si no hay descripción guardada, mostrar campo inline */}
+                {!(campana?.descripcion_agencia || descAgencia) && (
+                  <div className="mb-2">
+                    <input
+                      value={descAgencia}
+                      onChange={(e) => setDescAgencia(e.target.value)}
+                      placeholder="Describe brevemente tu servicio para que la IA sugiera los perfiles ideales..."
+                      className="w-full bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-gray-700 placeholder:text-amber-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                    />
+                  </div>
+                )}
+
+                <input
+                  value={filtroCargo}
+                  onChange={(e) => setFiltroCargo(e.target.value)}
+                  placeholder="ej. CEO, Director de Marketing, CMO, Founder..."
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                />
+
+                {/* Chips de perfiles activos */}
+                {filtroCargo.trim() && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {filtroCargo.split(',').map(p => p.trim()).filter(Boolean).map((p) => (
+                      <span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-full text-[10px] font-medium">
+                        {p}
+                        <button
+                          onClick={() => setFiltroCargo(prev => prev.split(',').map(x => x.trim()).filter(x => x !== p).join(', '))}
+                          className="hover:text-orange-800 ml-0.5"
+                        >×</button>
+                      </span>
+                    ))}
+                    <button onClick={() => setFiltroCargo('')} className="text-[10px] text-gray-300 hover:text-gray-500">
+                      limpiar
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Preview y acción */}
+              <div className={`flex items-center justify-between px-4 py-3 rounded-lg ${
+                contactosFiltradosPrevio.length > 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'
+              }`}>
+                <div>
+                  <p className={`text-sm font-semibold ${contactosFiltradosPrevio.length > 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                    {contactosFiltradosPrevio.length} contactos seleccionados
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {contactosExcluidosPrevio > 0
+                      ? `${contactosExcluidosPrevio} excluidos por filtro de cargo`
+                      : 'Sin filtro de cargo activo'}
+                  </p>
+                </div>
+                <button
+                  onClick={guardarContactosFiltrados}
+                  disabled={contactosFiltradosPrevio.length === 0 || fase === 'buscando'}
+                  className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
+                >
+                  {fase === 'buscando' && <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>}
+                  Guardar {contactosFiltradosPrevio.length} contactos
+                </button>
               </div>
             </div>
+          </div>
         )}
 
         {/* Panel análisis de empresas */}
