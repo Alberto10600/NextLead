@@ -16,6 +16,17 @@
   box-sizing: border-box;
 }
 
+/* Remove default browser blue focus ring globally */
+*:focus {
+  outline: none;
+}
+
+/* Restore accessible focus ring only for keyboard nav (not mouse clicks) */
+*:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
 body {
   background-color: #f9fafb;
   color: #111827;

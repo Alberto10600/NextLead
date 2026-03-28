@@ -1,16 +1,16 @@
+import Link from 'next/link'
+
 interface TarjetaEstadisticaProps {
   titulo: string
   valor: string | number
   subtitulo?: string
   icono?: string
+  href?: string
 }
 
-export default function TarjetaEstadistica({ titulo, valor, subtitulo, icono }: TarjetaEstadisticaProps) {
-  return (
-    <div className="group relative bg-white border border-gray-200 rounded-xl p-5 overflow-hidden transition-all duration-200 hover:border-gray-200 hover:bg-[#141d2e]">
-      {/* Subtle gradient top accent */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
+export default function TarjetaEstadistica({ titulo, valor, subtitulo, icono, href }: TarjetaEstadisticaProps) {
+  const content = (
+    <div className={`group relative bg-white border border-gray-200 rounded-xl p-5 overflow-hidden transition-all duration-200 ${href ? 'hover:border-orange-200 hover:shadow-sm cursor-pointer' : ''}`}>
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">{titulo}</p>
@@ -20,11 +20,16 @@ export default function TarjetaEstadistica({ titulo, valor, subtitulo, icono }: 
           )}
         </div>
         {icono && (
-          <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-base text-blue-400 flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-base text-orange-400 flex-shrink-0">
             {icono}
           </div>
         )}
       </div>
     </div>
   )
+
+  if (href) {
+    return <Link href={href} className="block focus:outline-none">{content}</Link>
+  }
+  return content
 }

@@ -45,19 +45,21 @@ export default async function DashboardPage() {
 
         {/* Stats grid */}
         <div className="grid grid-cols-4 gap-4">
-          <TarjetaEstadistica titulo="Campañas activas"  valor={campañasActivas} icono="◎" />
-          <TarjetaEstadistica titulo="Emails enviados"   valor={totalEnviados}   icono="✉" />
+          <TarjetaEstadistica titulo="Campañas activas"  valor={campañasActivas} icono="◎" href="/dashboard/campanas" />
+          <TarjetaEstadistica titulo="Emails enviados"   valor={totalEnviados}   icono="✉" href="/dashboard/contactos" />
           <TarjetaEstadistica
             titulo="Tasa de apertura"
             valor={calcularTasaApertura(totalEnviados, totalAbiertos)}
             subtitulo={`${totalAbiertos} abiertos`}
             icono="◉"
+            href="/dashboard/seguimientos"
           />
           <TarjetaEstadistica
             titulo="Respuestas"
             valor={totalRespondidos}
             subtitulo={totalEnviados > 0 ? `${Math.round((totalRespondidos / totalEnviados) * 100)}% tasa` : '—'}
             icono="↩"
+            href="/dashboard/pipeline"
           />
         </div>
 
@@ -111,26 +113,26 @@ export default async function DashboardPage() {
                   {listaCampanas.map((c, i) => (
                     <tr
                       key={c.id}
-                      className={`group transition-colors duration-100 hover:bg-gray-50 ${i < listaCampanas.length - 1 ? 'border-b border-gray-200' : ''}`}
+                      className={`group relative transition-colors duration-100 hover:bg-orange-50/40 ${i < listaCampanas.length - 1 ? 'border-b border-gray-200' : ''}`}
                     >
                       <td className="px-5 py-3.5">
                         <Link
                           href={`/dashboard/campanas/${c.id}`}
-                          className="text-gray-800 hover:text-orange-400 transition-colors duration-150 font-medium tracking-tight text-sm"
+                          className="font-medium tracking-tight text-sm text-gray-800 group-hover:text-orange-600 transition-colors after:absolute after:inset-0 after:z-0"
                         >
                           {c.nombre}
                         </Link>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5 relative z-10 pointer-events-none">
                         <span className="text-gray-400 text-xs tracking-tight">{c.sector}</span>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5 relative z-10 pointer-events-none">
                         <Badge variant={estadoBadge[c.estado] || 'default'}>{c.estado}</Badge>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5 relative z-10 pointer-events-none">
                         <span className="text-gray-500 text-sm tabular-nums">{c.total_enviados}</span>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5 relative z-10 pointer-events-none">
                         <span className="text-gray-400 text-xs tracking-tight">{formatearFecha(c.created_at)}</span>
                       </td>
                     </tr>

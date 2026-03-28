@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 // Cliente admin sin cookies — necesario porque lo llaman clientes de email
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-)
+function getSupabaseAdmin() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) throw new Error('NEXT_PUBLIC_SUPABASE_URL no configurada')
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY no configurada')
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { persistSession: false } }
+  )
+}
 
 // GIF transparente 1x1
 const GIF = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64')
@@ -16,6 +20,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: contacto_id } = await params
+
+  const supabaseAdmin = getSupabaseAdmin()
 
   // Actualizar contacto solo si está en estado 'enviado' (evitar dobles)
   const { data: contacto } = await supabaseAdmin
