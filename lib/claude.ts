@@ -95,15 +95,24 @@ export async function generarEmailProspeccion(params: {
   empresa?: string
   sector: string
   contextoWeb?: string
+  analisisEmpresa?: { actividad?: string; tamano?: string; dolor?: string; resumen?: string }
   descripcionAgencia: string
   tono?: string
 }): Promise<{ asunto: string; cuerpo: string }> {
-  const { nombre, apellido, cargo, empresa, sector, contextoWeb, descripcionAgencia, tono = 'cercano' } = params
+  const { nombre, apellido, cargo, empresa, sector, contextoWeb, analisisEmpresa, descripcionAgencia, tono = 'cercano' } = params
 
   const skill = leerSkillEmail()
-  const contextoLinea = contextoWeb ? `- Web de su empresa: ${contextoWeb}` : ''
 
   const tonoInstruccion = INSTRUCCIONES_TONO[tono] || INSTRUCCIONES_TONO.cercano
+
+  // Build a rich context block from structured analysis + raw web
+  const bloqueContexto = [
+    analisisEmpresa?.resumen && `- Resumen empresa: ${analisisEmpresa.resumen}`,
+    analisisEmpresa?.actividad && `- Actividad: ${analisisEmpresa.actividad}`,
+    analisisEmpresa?.tamano && `- Tamaño: ${analisisEmpresa.tamano}`,
+    analisisEmpresa?.dolor && `- Punto de dolor identificado: ${analisisEmpresa.dolor}`,
+    !analisisEmpresa && contextoWeb && `- Contexto web: ${contextoWeb.slice(0, 600)}`,
+  ].filter(Boolean).join('\n')
 
   const userPrompt = skill
     ? skill
@@ -112,28 +121,39 @@ export async function generarEmailProspeccion(params: {
         .replace('{{cargo}}', cargo || 'responsable de la empresa')
         .replace('{{empresa}}', empresa || 'la empresa')
         .replace('{{sector}}', sector)
-        .replace('{{contexto_web}}', contextoLinea)
+        .replace('{{contexto_web}}', bloqueContexto)
         .replace('{{descripcion_agencia}}', descripcionAgencia)
         .replace('{{tono}}', tonoInstruccion)
-    : `Redacta email de prospección B2B en español para:
+    : `Eres un experto en ventas B2B con 15 años de experiencia. Escribe un email de prospección en frío de alto rendimiento para:
+
+DESTINATARIO:
 - Nombre: ${nombre || 'el/la responsable'} ${apellido || ''}
-- Cargo: ${cargo || 'responsable de la empresa'}
-- Empresa: ${empresa || 'la empresa'}
-- Sector: ${sector}
-${contextoLinea}
-- Mi agencia ofrece: ${descripcionAgencia}
-- Tono: ${tonoInstruccion}
+- Cargo: ${cargo || 'responsable'}
+- Empresa: ${empresa || 'la empresa'} (sector: ${sector})
+${bloqueContexto ? `\nCONTEXTO DE LA EMPRESA:\n${bloqueContexto}` : ''}
 
-REGLAS:
-- Asunto: máximo 8 palabras, directo, sin emojis
-- Cuerpo: máximo 120 palabras
-- Tono: cercano y directo, nada formal ni corporativo
-- Mencionar UN problema concreto conocido del sector
-- Terminar con UNA pregunta de respuesta fácil
-- NO usar: 'espero', 'estimado', 'adjunto', 'solución', 'innovador', 'sinergias', 'me pongo en contacto'
-- NO parecer email masivo
+MI PROPUESTA:
+${descripcionAgencia}
 
-Responde SOLO con este JSON:
+TONO: ${tonoInstruccion}
+
+ESTRUCTURA OBLIGATORIA DEL CUERPO (en este orden):
+1. Apertura con gancho específico (1 frase) — algo concreto de SU empresa o sector que demuestre que no es un email masivo
+2. Problema real que tienen (1 frase) — basado en el punto de dolor identificado, específico del sector
+3. Qué hago yo y UN resultado concreto o caso de éxito (1-2 frases) — cuantificado si es posible
+4. Cierre con UNA pregunta de respuesta fácil (1 frase) — que invite a una conversación corta, no a comprar
+
+REGLAS CRÍTICAS:
+- Asunto: 5-7 palabras, intrigante, sin emojis, no genérico
+- Cuerpo: MÁXIMO 90 palabras. Cada palabra debe aportar valor
+- El gancho inicial debe referenciar algo real y específico de la empresa/sector — nunca abrir con "te escribo porque"
+- El problema debe ser CONCRETO y RECONOCIBLE por el destinatario, no vago
+- El resultado debe ser específico: porcentajes, plazos, nombres de sector, no "mejorar resultados"
+- La pregunta final: corta, concreta, que se responda con sí/no o en 10 segundos
+- PROHIBIDO: 'espero', 'estimado/a', 'me pongo en contacto', 'solución integral', 'innovador', 'sinergias', 'adjunto', 'no dude en', 'a su disposición', 'potenciar', 'optimizar'
+- PROHIBIDO empezar por el nombre del destinatario en el asunto
+
+Responde SOLO con este JSON (sin markdown):
 {"asunto": "...", "cuerpo": "..."}`
 
   const intentar = async (): Promise<{ asunto: string; cuerpo: string }> => {

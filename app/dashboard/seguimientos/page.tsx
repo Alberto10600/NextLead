@@ -184,7 +184,7 @@ export default function SeguimientosPage() {
             <Button
               onClick={procesarAhora}
               loading={procesando}
-              disabled={stats.pendientesHoy === 0}
+              disabled={modoSeguimiento === 'real' ? stats.pendientesHoy === 0 : stats.total - stats.enviados - stats.cancelados === 0}
               size="sm"
               className="rounded-none border-0"
             >

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { generarEmailProspeccion } from '@/lib/claude'
+import { generarEmailProspeccion, analizarEmpresa } from '@/lib/claude'
 import { scrapearWeb } from '@/lib/scraper'
 import { sleep } from '@/lib/utils'
 
@@ -38,8 +38,18 @@ export async function POST(request: Request) {
     await sleep(300)
 
     let contextoWeb: string | null = null
+    let analisisEmpresa: { actividad?: string; tamano?: string; dolor?: string; resumen?: string } | undefined
+
     if (contacto.dominio) {
       contextoWeb = await scrapearWeb(contacto.dominio).catch(() => null)
+      if (contextoWeb) {
+        try {
+          const analisisRaw = await analizarEmpresa(contacto.dominio, contextoWeb)
+          analisisEmpresa = JSON.parse(analisisRaw)
+        } catch {
+          // Analysis failed — fall back to raw web context
+        }
+      }
     }
 
     try {
@@ -50,6 +60,7 @@ export async function POST(request: Request) {
         empresa: contacto.empresa,
         sector,
         contextoWeb: contextoWeb || undefined,
+        analisisEmpresa,
         descripcionAgencia: descripcion_agencia,
         tono,
       })
