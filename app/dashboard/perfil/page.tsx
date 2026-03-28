@@ -84,9 +84,7 @@ export default function PerfilPage() {
   }
 
   const gestionarPlan = async () => {
-    const res = await fetch('/api/stripe/portal', { method: 'POST' })
-    const data = await res.json()
-    if (data.url) window.location.href = data.url
+    setToast({ msg: 'Gestión de planes próximamente disponible', tipo: 'info' })
   }
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>
