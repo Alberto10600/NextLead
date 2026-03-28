@@ -126,11 +126,17 @@ export async function GET() {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   }
 
-  const { data: seguimientos } = await supabase
+  const { data: seguimientos, error } = await supabase
     .from('seguimientos')
     .select('*, contactos(id, nombre, apellido, email, empresa, cargo, dominio, estado, asunto_generado, email_generado, fecha_envio, fecha_apertura, fecha_respuesta, notas)')
     .eq('user_id', user.id)
     .order('fecha_programada', { ascending: true })
 
+  if (error) {
+    console.error('[seguimientos GET] error:', error)
+    return NextResponse.json({ error: error.message, code: error.code, seguimientos: [] })
+  }
+
+  console.log('[seguimientos GET] user:', user.id, '| rows:', seguimientos?.length ?? 0)
   return NextResponse.json({ seguimientos: seguimientos || [] })
 }
