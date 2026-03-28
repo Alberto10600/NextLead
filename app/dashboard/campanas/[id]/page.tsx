@@ -164,7 +164,7 @@ export default function DetalleCampanaPage() {
   }
 
   const guardarContactosFiltrados = async () => {
-    const filtrados = aplicarFiltros(contactosPrevio)
+    const filtrados = contactosFiltradosPrevio
     if (filtrados.length === 0) {
       setToast({ msg: 'Los filtros excluyen todos los contactos. Ajusta los criterios.', tipo: 'info' })
       return
@@ -349,6 +349,9 @@ export default function DetalleCampanaPage() {
   const enProceso = fase === 'buscando' || fase === 'enviando' || fase === 'generando'
   const tieneContactos = contactos.length > 0
   const sinEmailGenerado = contactos.filter((c) => !c.email_generado).length
+  // Capa 2: precompute filtered contacts for the filter panel
+  const contactosFiltradosPrevio = aplicarFiltros(contactosPrevio)
+  const contactosExcluidosPrevio = contactosPrevio.length - contactosFiltradosPrevio.length
 
   return (
     <div className="min-h-full">
@@ -701,10 +704,7 @@ export default function DetalleCampanaPage() {
         )}
 
         {/* Capa 2: Panel de filtrado pre-guardado */}
-        {contactosPrevio.length > 0 && (() => {
-          const filtrados = aplicarFiltros(contactosPrevio)
-          const excluidos = contactosPrevio.length - filtrados.length
-          return (
+        {contactosPrevio.length > 0 && (
             <div className="bg-white border border-orange-200 rounded-lg overflow-hidden">
               <div className="px-5 py-4 border-b border-orange-100 bg-orange-50/40 flex items-center justify-between">
                 <div>
@@ -756,28 +756,27 @@ export default function DetalleCampanaPage() {
                 </div>
 
                 {/* Preview conteo */}
-                <div className={`flex items-center justify-between px-4 py-3 rounded-lg ${filtrados.length > 0 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                <div className={`flex items-center justify-between px-4 py-3 rounded-lg ${contactosFiltradosPrevio.length > 0 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
                   <div>
-                    <p className={`text-sm font-semibold ${filtrados.length > 0 ? 'text-green-700' : 'text-red-700'}`}>
-                      {filtrados.length} contactos pasarán el filtro
+                    <p className={`text-sm font-semibold ${contactosFiltradosPrevio.length > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      {contactosFiltradosPrevio.length} contactos pasarán el filtro
                     </p>
-                    {excluidos > 0 && (
-                      <p className="text-xs text-gray-400 mt-0.5">{excluidos} excluidos por los filtros actuales</p>
+                    {contactosExcluidosPrevio > 0 && (
+                      <p className="text-xs text-gray-400 mt-0.5">{contactosExcluidosPrevio} excluidos por los filtros actuales</p>
                     )}
                   </div>
                   <button
                     onClick={guardarContactosFiltrados}
-                    disabled={filtrados.length === 0 || fase === 'buscando'}
+                    disabled={contactosFiltradosPrevio.length === 0 || fase === 'buscando'}
                     className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
                   >
                     {fase === 'buscando' ? <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> : null}
-                    Guardar {filtrados.length} contactos
+                    Guardar {contactosFiltradosPrevio.length} contactos
                   </button>
                 </div>
               </div>
             </div>
-          )
-        })()}
+        )}
 
         {/* Panel generar emails con IA */}
         {mostrarGenerador && tieneContactos && (
