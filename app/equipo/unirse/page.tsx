@@ -131,7 +131,7 @@ export default function UnirseEquipoPage() {
               </h2>
               {equipoNombre && (
                 <p className="text-center text-sm text-gray-500 mb-6">
-                  Te han invitado a unirte a <strong className="text-gray-900">"{equipoNombre}"</strong>
+                  Te han invitado a unirte a <strong className="text-gray-900">&ldquo;{equipoNombre}&rdquo;</strong>
                 </p>
               )}
 

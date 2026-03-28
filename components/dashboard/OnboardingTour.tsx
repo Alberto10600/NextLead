@@ -37,7 +37,7 @@ const pasos = [
           <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
             <span className="text-white text-xs font-bold">2</span>
           </div>
-          <p className="text-sm text-gray-700">Pulsa el botón naranja <strong>"Nueva campaña"</strong></p>
+          <p className="text-sm text-gray-700">Pulsa el botón naranja <strong>&ldquo;Nueva campaña&rdquo;</strong></p>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
@@ -98,7 +98,7 @@ const pasos = [
           <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center shrink-0">
             <span className="text-gray-600 text-xs font-bold">1</span>
           </div>
-          <p className="text-sm text-gray-700">Pulsa <strong>"Analizar"</strong> — Claude estudia cada empresa</p>
+          <p className="text-sm text-gray-700">Pulsa <strong>&ldquo;Analizar&rdquo;</strong> — Claude estudia cada empresa</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center shrink-0">
@@ -110,7 +110,7 @@ const pasos = [
           <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
             <span className="text-white text-xs font-bold">3</span>
           </div>
-          <p className="text-sm text-gray-700">Pulsa <strong>"Generar emails IA"</strong>, describe tu servicio y listo</p>
+          <p className="text-sm text-gray-700">Pulsa <strong>&ldquo;Generar emails IA&rdquo;</strong>, describe tu servicio y listo</p>
         </div>
         <p className="text-xs text-gray-500 mt-1">Puedes editar cualquier email antes de enviarlo haciendo clic sobre él.</p>
       </div>

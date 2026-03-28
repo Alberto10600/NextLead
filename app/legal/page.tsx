@@ -49,7 +49,7 @@ export default function LegalPage() {
               <h3 className="font-semibold text-gray-900 mb-2">1.1 Responsable del tratamiento</h3>
               <p>
                 El responsable del tratamiento de los datos personales recogidos a través de Arrivo es la
-                entidad titular del servicio (en adelante, <strong>"Arrivo"</strong>). Para cualquier consulta
+                entidad titular del servicio (en adelante, <strong>&ldquo;Arrivo&rdquo;</strong>). Para cualquier consulta
                 relacionada con la privacidad, puede contactar en: <strong>privacidad@arrivo.es</strong>
               </p>
             </div>
@@ -103,7 +103,7 @@ export default function LegalPage() {
               <ul className="list-disc list-inside space-y-1 text-gray-600">
                 <li><strong>Acceso:</strong> conocer qué datos tenemos sobre usted.</li>
                 <li><strong>Rectificación:</strong> corregir datos incorrectos.</li>
-                <li><strong>Supresión:</strong> solicitar el borrado de sus datos ("derecho al olvido").</li>
+                <li><strong>Supresión:</strong> solicitar el borrado de sus datos (&ldquo;derecho al olvido&rdquo;).</li>
                 <li><strong>Portabilidad:</strong> recibir sus datos en formato estructurado.</li>
                 <li><strong>Oposición:</strong> oponerse al tratamiento en determinadas circunstancias.</li>
                 <li><strong>Limitación:</strong> solicitar la restricción del tratamiento.</li>
@@ -192,7 +192,7 @@ export default function LegalPage() {
               <h3 className="font-semibold text-gray-900 mb-2">2.6 Limitación de responsabilidad</h3>
               <p>
                 Arrivo no garantiza la entregabilidad de los emails ni que los contactos respondan. El servicio
-                se ofrece "tal como está". En ningún caso Arrivo será responsable de daños indirectos,
+                se ofrece &ldquo;tal como está&rdquo;. En ningún caso Arrivo será responsable de daños indirectos,
                 pérdida de negocio o lucro cesante derivados del uso del servicio.
               </p>
             </div>
