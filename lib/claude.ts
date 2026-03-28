@@ -3,9 +3,10 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { sleep } from './utils'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-})
+function getAnthropic() {
+  if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY no configurada')
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+}
 
 /** Extrae JSON limpio de una respuesta que puede venir con ```json...``` */
 function extraerJSON(texto: string): string {
@@ -38,7 +39,7 @@ Responde SOLO con este JSON:
 
   for (let intento = 0; intento < 3; intento++) {
     try {
-      const message = await anthropic.messages.create({
+      const message = await getAnthropic().messages.create({
         model: process.env.EMAIL_GENERATION_MODEL || 'claude-haiku-4-5-20251001',
         max_tokens: 500,
         system: 'Eres un experto en el mercado empresarial español y latinoamericano. Solo devuelves JSON estricto sin markdown.',
@@ -58,7 +59,7 @@ Responde SOLO con este JSON:
 }
 
 export async function analizarEmpresa(dominio: string, contextoWeb: string): Promise<string> {
-  const message = await anthropic.messages.create({
+  const message = await getAnthropic().messages.create({
     model: process.env.EMAIL_GENERATION_MODEL || 'claude-haiku-4-5-20251001',
     max_tokens: 300,
     system: 'Eres un analista de empresas B2B. Respondes en español, de forma concisa y útil para un comercial.',
@@ -136,7 +137,7 @@ Responde SOLO con este JSON:
 {"asunto": "...", "cuerpo": "..."}`
 
   const intentar = async (): Promise<{ asunto: string; cuerpo: string }> => {
-    const message = await anthropic.messages.create({
+    const message = await getAnthropic().messages.create({
       model: process.env.EMAIL_GENERATION_MODEL || 'claude-haiku-4-5-20251001',
       max_tokens: 350,
       system: 'Eres un experto en ventas B2B y copywriting en España. Redactas emails de prospección que consiguen respuesta. Siempre respondes en JSON estricto sin markdown.',
@@ -173,7 +174,7 @@ export async function generarEmailSeguimiento(params: {
 }): Promise<{ asunto: string; cuerpo: string }> {
   const { nombre, empresa, emailAnterior, numeroSeguimiento, descripcionAgencia } = params
 
-  const message = await anthropic.messages.create({
+  const message = await getAnthropic().messages.create({
     model: process.env.EMAIL_GENERATION_MODEL || 'claude-haiku-4-5-20251001',
     max_tokens: 300,
     system: 'Eres un experto en ventas B2B. Escribes follow-ups breves y directos. Responde en JSON estricto sin markdown.',

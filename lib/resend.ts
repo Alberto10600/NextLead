@@ -1,8 +1,12 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY!)
-const FROM = process.env.RESEND_FROM_EMAIL || 'noreply@arrivo.es'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://arrivo.es'
+function getResend() {
+  if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY no configurada')
+  return new Resend(process.env.RESEND_API_KEY)
+}
+
+const FROM = () => process.env.RESEND_FROM_EMAIL || 'noreply@arrivo.es'
+const APP_URL = () => process.env.NEXT_PUBLIC_APP_URL || 'https://arrivo.es'
 
 export interface EnvioEmail {
   to: string
@@ -20,7 +24,7 @@ export interface ResultadoEnvio {
 
 function buildHtml(cuerpo: string, contacto_id?: string): string {
   const pixelUrl = contacto_id
-    ? `${APP_URL}/api/track/open/${contacto_id}`
+    ? `${APP_URL()}/api/track/open/${contacto_id}`
     : null
 
   const pixel = pixelUrl
@@ -51,8 +55,8 @@ export async function enviarEmail(params: EnvioEmail): Promise<ResultadoEnvio> {
       ? [{ name: 'contacto_id', value: params.contacto_id }]
       : undefined
 
-    const { data, error } = await resend.emails.send({
-      from: params.nombreRemitente ? `${params.nombreRemitente} <${FROM}>` : FROM,
+    const { data, error } = await getResend().emails.send({
+      from: params.nombreRemitente ? `${params.nombreRemitente} <${FROM()}>` : FROM(),
       to: params.to,
       subject: params.asunto,
       html: buildHtml(params.cuerpo, params.contacto_id),
