@@ -48,6 +48,8 @@ export default function DetalleCampanaPage() {
   const [paisBusqueda, setPaisBusqueda] = useState('España')
   const [regionBusqueda, setRegionBusqueda] = useState('')
   const [buscandoSector, setBuscandoSector] = useState(false)
+  const [sugirendoPerfiles, setSugirendoPerfiles] = useState(false)
+  const [maxPorDominioInput, setMaxPorDominioInput] = useState<string>('3')  // custom text input
   const [dominiosSugeridos, setDominiosSugeridos] = useState<string[]>([])
   const [modoEnvio, setModoEnvio] = useState<'test' | 'real'>('test')
   // Capa 1: límite de contactos por dominio
@@ -243,6 +245,32 @@ export default function DetalleCampanaPage() {
     setDescAgencia(p.descripcion)
     if (p.sector) setSectorObjetivo(p.sector)
     setTono(p.tono)
+  }
+
+  const sugerirPerfiles = async () => {
+    const desc = campana?.descripcion_agencia || descAgencia
+    if (!desc?.trim()) {
+      setToast({ msg: 'Primero completa la descripción de tu servicio en "Generar emails IA"', tipo: 'info' })
+      return
+    }
+    setSugirendoPerfiles(true)
+    try {
+      const res = await fetch('/api/sugerir-perfiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descripcion: desc }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      if (data.perfiles?.length) {
+        setFiltroCargo(data.perfiles.join(', '))
+        setToast({ msg: `${data.perfiles.length} perfiles sugeridos`, tipo: 'success' })
+      }
+    } catch (e: unknown) {
+      setToast({ msg: (e as Error).message, tipo: 'error' })
+    } finally {
+      setSugirendoPerfiles(false)
+    }
   }
 
   const analizarContactos = async () => {
@@ -616,28 +644,119 @@ export default function DetalleCampanaPage() {
             </div>
 
             <div className="p-5">
-              {/* Capa 1: selector de max contactos por dominio */}
+              {/* Perfiles objetivo — ANTES de buscar */}
+              <div className="mb-4 pb-4 border-b border-gray-100">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-gray-500">
+                    Perfiles objetivo
+                    <span className="ml-1 text-gray-300">(filtra antes de buscar)</span>
+                  </label>
+                  <button
+                    onClick={sugerirPerfiles}
+                    disabled={sugirendoPerfiles}
+                    title={campana?.descripcion_agencia || descAgencia ? 'Sugerir perfiles con IA' : 'Añade la descripción de tu servicio en "Generar emails IA" para usar esta función'}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-orange-500 hover:text-orange-600 disabled:opacity-50 transition-colors"
+                  >
+                    {sugirendoPerfiles ? (
+                      <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                    ) : (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                      </svg>
+                    )}
+                    Sugerir con IA
+                  </button>
+                </div>
+                <input
+                  value={filtroCargo}
+                  onChange={(e) => setFiltroCargo(e.target.value)}
+                  placeholder="ej. CEO, Director de Marketing, CMO, Growth Manager..."
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                />
+                <p className="text-[10px] text-gray-400 mt-1.5">
+                  Cargos separados por comas. Solo se guardarán contactos que coincidan. Vacío = todos.
+                </p>
+                {/* Tag chips si hay perfiles */}
+                {filtroCargo.trim() && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {filtroCargo.split(',').map((p) => p.trim()).filter(Boolean).map((p) => (
+                      <span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-full text-[10px] font-medium">
+                        {p}
+                        <button
+                          onClick={() => setFiltroCargo((prev) =>
+                            prev.split(',').map(x => x.trim()).filter(x => x !== p).join(', ')
+                          )}
+                          className="hover:text-orange-800"
+                        >×</button>
+                      </span>
+                    ))}
+                    <button onClick={() => setFiltroCargo('')} className="text-[10px] text-gray-300 hover:text-gray-500 ml-1">
+                      limpiar todo
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Contactos por empresa — número personalizado */}
               <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
-                <label className="text-xs font-medium text-gray-500 shrink-0">Contactos por empresa</label>
-                <div className="flex gap-1.5">
-                  {[1, 2, 3, 5, 0].map((n) => (
+                <label className="text-xs font-medium text-gray-500 shrink-0">Máx. por empresa</label>
+                <div className="flex items-center gap-1.5">
+                  {[1, 2, 3, 5].map((n) => (
                     <button
                       key={n}
-                      onClick={() => setMaxPorDominio(n)}
+                      onClick={() => { setMaxPorDominio(n); setMaxPorDominioInput(String(n)) }}
                       className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
                         maxPorDominio === n
                           ? 'bg-orange-500 text-white border-orange-500'
                           : 'text-gray-500 border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      {n === 0 ? 'Todos' : n}
+                      {n}
                     </button>
                   ))}
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={maxPorDominioInput}
+                    onChange={(e) => {
+                      setMaxPorDominioInput(e.target.value)
+                      const n = parseInt(e.target.value)
+                      if (!isNaN(n) && n >= 1) setMaxPorDominio(n)
+                    }}
+                    placeholder="nº"
+                    className={`w-14 text-center text-xs border rounded-md px-2 py-1 outline-none transition-colors ${
+                      ![1,2,3,5].includes(maxPorDominio) && maxPorDominio > 0
+                        ? 'bg-orange-500 text-white border-orange-500'
+                        : 'text-gray-500 border-gray-200 focus:border-orange-400'
+                    }`}
+                  />
+                  <button
+                    onClick={() => { setMaxPorDominio(0); setMaxPorDominioInput('') }}
+                    className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
+                      maxPorDominio === 0
+                        ? 'bg-orange-500 text-white border-orange-500'
+                        : 'text-gray-500 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    Todos
+                  </button>
                 </div>
                 <p className="text-[10px] text-gray-400">
-                  {maxPorDominio === 0 ? 'Sin límite — puede generar listas muy largas' : `Máx. ${maxPorDominio} por empresa`}
+                  {maxPorDominio === 0 ? 'Sin límite' : `${maxPorDominio} por empresa`}
                 </p>
               </div>
+
+              {/* Excluir genéricos — toggle compacto */}
+              <label className="flex items-center gap-2 cursor-pointer mb-4 pb-3 border-b border-gray-100">
+                <input
+                  type="checkbox"
+                  checked={excluirGenericos}
+                  onChange={(e) => setExcluirGenericos(e.target.checked)}
+                  className="accent-orange-500"
+                />
+                <span className="text-xs text-gray-600">Excluir emails genéricos <span className="text-gray-400">(info@, admin@, ventas@...)</span></span>
+              </label>
 
               {modoBusqueda === 'dominios' ? (
                 <>
