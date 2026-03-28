@@ -56,37 +56,37 @@ export async function POST(request: Request) {
       continue
     }
 
-    // Generar contenido del seguimiento si no existe
-    let asunto = seg.asunto
-    let cuerpo = seg.cuerpo
-
-    if (!asunto || !cuerpo) {
-      try {
-        const descripcionAgencia = seg.campanas?.descripcion_agencia || ''
-        const emailAnterior = contacto.email_generado || ''
-        const generated = await generarEmailSeguimiento({
-          nombre: contacto.nombre,
-          empresa: contacto.empresa,
-          emailAnterior,
-          numeroSeguimiento: seg.numero_seguimiento,
-          descripcionAgencia,
-        })
-        asunto = generated.asunto
-        cuerpo = generated.cuerpo
-
-        // Guardar el contenido generado
-        await supabase
-          .from('seguimientos')
-          .update({ asunto, cuerpo })
-          .eq('id', seg.id)
-      } catch (e: unknown) {
-        errores.push(`Error generando seguimiento para ${contacto.email}: ${(e as Error).message}`)
-        continue
-      }
-    }
-
-    // Enviar email
+    // En modo real: generar contenido si no existe y enviar email
+    // En modo test: marcar directamente como enviado sin generar contenido ni enviar email
     if (modo === 'real') {
+      let asunto = seg.asunto
+      let cuerpo = seg.cuerpo
+
+      if (!asunto || !cuerpo) {
+        try {
+          const descripcionAgencia = seg.campanas?.descripcion_agencia || ''
+          const emailAnterior = contacto.email_generado || ''
+          const generated = await generarEmailSeguimiento({
+            nombre: contacto.nombre,
+            empresa: contacto.empresa,
+            emailAnterior,
+            numeroSeguimiento: seg.numero_seguimiento,
+            descripcionAgencia,
+          })
+          asunto = generated.asunto
+          cuerpo = generated.cuerpo
+
+          // Guardar el contenido generado
+          await supabase
+            .from('seguimientos')
+            .update({ asunto, cuerpo })
+            .eq('id', seg.id)
+        } catch (e: unknown) {
+          errores.push(`Error generando seguimiento para ${contacto.email}: ${(e as Error).message}`)
+          continue
+        }
+      }
+
       const resultado = await enviarEmail({
         to: contacto.email,
         asunto: asunto!,
