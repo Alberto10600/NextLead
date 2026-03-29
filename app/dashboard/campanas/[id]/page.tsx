@@ -1402,6 +1402,35 @@ export default function DetalleCampanaPage() {
       </div>
 
       {toast && <Toast message={toast.msg} type={toast.tipo} onClose={() => setToast(null)} />}
+
+      {/* Sticky loading indicator — visible when scrolled away from header */}
+      {fase !== 'idle' && fase !== 'completado' && fase !== 'listo' && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
+          <div className="flex items-center gap-2.5 px-4 py-2.5 bg-gray-900/90 backdrop-blur-sm text-white text-sm rounded-full shadow-lg border border-white/10">
+            <svg className="animate-spin w-3.5 h-3.5 text-orange-400 shrink-0" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            <span className="font-medium">
+              {fase === 'buscando' && 'Buscando en Hunter...'}
+              {fase === 'analizando' && 'Analizando empresas...'}
+              {fase === 'enviando' && `Enviando${modoEnvio === 'test' ? ' (test)' : ''}...`}
+              {fase === 'generando' && (progGeneracion
+                ? `Generando emails ${progGeneracion.hecho}/${progGeneracion.total}`
+                : 'Generando emails...'
+              )}
+            </span>
+            {fase === 'generando' && progGeneracion && (
+              <div className="w-24 h-1 bg-white/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-orange-400 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.round((progGeneracion.hecho / progGeneracion.total) * 100)}%` }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
@@ -88,6 +89,20 @@ export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Persist collapse state in localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('sidebar-collapsed')
+    if (stored === 'true') setCollapsed(true)
+  }, [])
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      localStorage.setItem('sidebar-collapsed', String(!prev))
+      return !prev
+    })
+  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -95,28 +110,62 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-56 min-h-screen bg-white border-r border-gray-200 flex flex-col">
-      {/* Logo */}
-      <div className="px-5 py-5 border-b border-gray-200">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-400/20">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+    <aside
+      className={`
+        min-h-screen bg-white border-r border-gray-200 flex flex-col
+        transition-all duration-200 ease-in-out shrink-0
+        ${collapsed ? 'w-14' : 'w-56'}
+      `}
+    >
+      {/* Logo + collapse toggle */}
+      <div className="px-3 py-4 border-b border-gray-200 flex items-center justify-between gap-2">
+        {!collapsed && (
+          <Link href="/dashboard" className="flex items-center gap-2.5 flex-1 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-400/20 shrink-0">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </div>
+            <span className="text-[15px] font-bold tracking-tight text-gray-900 truncate">
+              Arr<span className="text-orange-500">ivo</span>
+            </span>
+          </Link>
+        )}
+        {collapsed && (
+          <Link href="/dashboard" className="flex items-center justify-center w-full">
+            <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-400/20">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="white" stroke="none">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </div>
+          </Link>
+        )}
+        <button
+          onClick={toggleCollapsed}
+          className="flex-shrink-0 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+        >
+          {collapsed ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
             </svg>
-          </div>
-          <span className="text-[15px] font-bold tracking-tight text-gray-900">
-            Arr<span className="text-orange-500">ivo</span>
-          </span>
-        </Link>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          )}
+        </button>
       </div>
 
       {/* Nav label */}
-      <div className="px-5 pt-5 pb-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Menu</p>
-      </div>
+      {!collapsed && (
+        <div className="px-5 pt-4 pb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">Menu</p>
+        </div>
+      )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 space-y-0.5">
+      <nav className={`flex-1 px-2 space-y-0.5 ${collapsed ? 'pt-4' : 'pt-1'}`}>
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -126,32 +175,36 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              title={collapsed ? item.label : undefined}
               className={`
-                group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150
+                group relative flex items-center gap-3 rounded-lg text-sm transition-all duration-150
+                ${collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'}
                 ${isActive
                   ? 'bg-orange-50 text-orange-600 font-medium'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                 }
               `}
             >
-              {isActive && (
+              {isActive && !collapsed && (
                 <span className="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-orange-500 rounded-l-full" />
               )}
               <span className={`flex-shrink-0 transition-colors duration-150 ${isActive ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600'}`}>
                 {item.icon}
               </span>
-              <span className="tracking-tight">{item.label}</span>
+              {!collapsed && <span className="tracking-tight">{item.label}</span>}
             </Link>
           )
         })}
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-4 border-t border-gray-200 space-y-0.5">
+      <div className={`px-2 py-4 border-t border-gray-200 space-y-0.5`}>
         <Link
           href="/dashboard/perfil"
+          title={collapsed ? 'Perfil' : undefined}
           className={`
-            group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150
+            group flex items-center gap-3 rounded-lg text-sm transition-all duration-150
+            ${collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'}
             ${pathname === '/dashboard/perfil'
               ? 'bg-orange-50 text-orange-600 font-medium'
               : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
@@ -162,18 +215,22 @@ export default function Sidebar() {
             <circle cx="12" cy="8" r="4"/>
             <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
           </svg>
-          <span className="tracking-tight">Perfil</span>
+          {!collapsed && <span className="tracking-tight">Perfil</span>}
         </Link>
         <button
           onClick={handleLogout}
-          className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-red-400 hover:bg-red-500/[0.06] transition-all duration-150"
+          title={collapsed ? 'Cerrar sesión' : undefined}
+          className={`
+            group w-full flex items-center gap-3 rounded-lg text-sm text-gray-400 hover:text-red-400 hover:bg-red-500/[0.06] transition-all duration-150
+            ${collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'}
+          `}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 transition-colors">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
-          <span className="tracking-tight">Cerrar sesión</span>
+          {!collapsed && <span className="tracking-tight">Cerrar sesión</span>}
         </button>
       </div>
     </aside>
