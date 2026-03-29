@@ -1,11 +1,19 @@
 // ─── Apollo.io API client ─────────────────────────────────────────────────────
-// Documentación: https://apolloio.github.io/apollo-api-docs/
+// Docs: https://docs.apollo.io
+//
+// FLUJO DE DOS PASOS (optimizado para créditos):
+//   1. Search → gratis, devuelve IDs + has_email boolean (sin emails reales)
+//   2. Bulk enrich → 1 crédito por email encontrado, devuelve datos completos
+//
+// Así solo gastamos créditos en contactos que realmente tienen email.
 
-// Apollo base: try /api/v1 first (newer), /v1 is legacy
-const APOLLO_BASE = 'https://api.apollo.io/v1'
+const APOLLO_BASE = 'https://api.apollo.io/api/v1'
 const API_KEY = () => process.env.APOLLO_API_KEY!
 
+// ─── Tipos públicos ────────────────────────────────────────────────────────────
+
 export interface ApolloPersona {
+  id: string
   nombre?: string
   apellido?: string
   cargo?: string
@@ -15,18 +23,20 @@ export interface ApolloPersona {
   dominio?: string
   ciudad?: string
   pais?: string
+  tiene_email: boolean   // indicador de la búsqueda (sin coste)
 }
 
 export interface ApolloBusquedaFiltros {
-  titulos: string[]           // person_titles
-  seniorities: string[]       // person_seniorities: owner|founder|c_suite|vp|head|director|manager|senior
-  pais?: string               // "Spain", "Mexico", etc.
-  industrias?: string[]       // industry keywords
-  tamanos?: string[]          // org employee ranges: "1,10" | "11,50" | "51,200" | "201,500" | "501,1000"
-  limite: number              // max contacts to return
+  titulos: string[]       // person_titles
+  seniorities: string[]   // c_suite | founder | owner | vp | head | director | manager | senior | entry
+  pais?: string           // "Spain", "Mexico", etc.
+  industrias?: string[]   // q_organization_keyword_tags: ["saas", "retail", ...]
+  tamanos?: string[]      // org employee ranges: "1,200" | "201,500" | "501,1000"
+  limite: number          // número de contactos con email que queremos al final
 }
 
-// Mapeo de nuestros países ISO → nombres que entiende Apollo
+// ─── Mapeo países ISO → nombre Apollo ────────────────────────────────────────
+
 const PAIS_ISO_A_APOLLO: Record<string, string> = {
   ES: 'Spain', MX: 'Mexico', AR: 'Argentina', CO: 'Colombia',
   CL: 'Chile', PE: 'Peru', US: 'United States', GB: 'United Kingdom',
@@ -39,20 +49,33 @@ export function paisIsoAApollo(iso: string): string {
   return PAIS_ISO_A_APOLLO[iso] || iso
 }
 
-export async function buscarPersonas(
+// ─── Paso 1: Búsqueda (gratis, sin emails) ───────────────────────────────────
+
+interface PersonaRawSearch {
+  id: string
+  first_name?: string
+  last_name?: string
+  name?: string
+  title?: string
+  linkedin_url?: string
+  city?: string
+  country?: string
+  has_email?: boolean
+  organization?: { name?: string; primary_domain?: string }
+  organization_name?: string
+}
+
+async function buscarPersonas(
   filtros: ApolloBusquedaFiltros,
-  pagina = 1,
-): Promise<{ contactos: ApolloPersona[]; total: number }> {
+  pagina: number,
+  perPage: number,
+): Promise<{ personas: PersonaRawSearch[]; total: number }> {
   const key = API_KEY()
   if (!key) throw new Error('APOLLO_API_KEY no configurada')
-
-  const perPage = Math.min(filtros.limite, 100)
 
   const body: Record<string, unknown> = {
     per_page: perPage,
     page: pagina,
-    // Solo contactos con email verificado o probable
-    contact_email_status_v2: ['verified', 'likely to engage', 'guessed'],
   }
 
   if (filtros.titulos.length) body.person_titles = filtros.titulos
@@ -61,89 +84,155 @@ export async function buscarPersonas(
   if (filtros.industrias?.length) body.q_organization_keyword_tags = filtros.industrias
   if (filtros.tamanos?.length) body.organization_num_employees_ranges = filtros.tamanos
 
-  console.log('[Apollo] POST /mixed_people/search', JSON.stringify(body))
+  console.log('[Apollo] Search page', pagina, JSON.stringify(body))
 
-  const res = await fetch(`${APOLLO_BASE}/mixed_people/search`, {
+  const res = await fetch(`${APOLLO_BASE}/mixed_people/api_search`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
+      'accept': 'application/json',
       'x-api-key': key,
     },
     body: JSON.stringify(body),
   })
 
   const text = await res.text()
-  console.log('[Apollo] status:', res.status, '| body:', text.slice(0, 500))
+  console.log('[Apollo] Search status:', res.status, text.slice(0, 300))
 
-  if (!res.ok) {
-    throw new Error(`Apollo error ${res.status}: ${text.slice(0, 200)}`)
+  if (res.status === 429) throw new Error('Límite de peticiones Apollo alcanzado. Espera un momento.')
+  if (!res.ok) throw new Error(`Apollo error ${res.status}: ${text.slice(0, 200)}`)
+
+  let data: { people?: PersonaRawSearch[]; pagination?: { total_entries?: number } }
+  try { data = JSON.parse(text) } catch { return { personas: [], total: 0 } }
+
+  return {
+    personas: data.people || [],
+    total: data.pagination?.total_entries ?? 0,
   }
-
-  let data: {
-    people?: ApolloPersonaRaw[]
-    contacts?: ApolloPersonaRaw[]
-    pagination?: { total_entries?: number }
-  }
-  try { data = JSON.parse(text) } catch { return { contactos: [], total: 0 } }
-
-  const personas = data.people || data.contacts || []
-  const total = data.pagination?.total_entries ?? personas.length
-
-  const contactos: ApolloPersona[] = personas.map((p) => ({
-    nombre:      p.first_name || undefined,
-    apellido:    p.last_name || undefined,
-    cargo:       p.title || p.headline || undefined,
-    email:       p.email || undefined,
-    linkedin_url: p.linkedin_url || undefined,
-    empresa:     p.organization?.name || p.employment_history?.[0]?.organization_name || undefined,
-    dominio:     p.organization?.primary_domain || undefined,
-    ciudad:      p.city || undefined,
-    pais:        p.country || undefined,
-  }))
-
-  console.log(`[Apollo] página ${pagina} → ${contactos.length} personas (total: ${total})`)
-  return { contactos, total }
 }
 
-// ─── Busca hasta N contactos paginando automáticamente ────────────────────────
-export async function buscarHastaObjetivo(
-  filtros: ApolloBusquedaFiltros,
-): Promise<ApolloPersona[]> {
-  const resultado: ApolloPersona[] = []
-  let pagina = 1
-  const maxPaginas = 5  // seguridad anti-loop
+// ─── Paso 2: Enriquecimiento por IDs (1 crédito/email encontrado) ─────────────
 
-  while (resultado.length < filtros.limite && pagina <= maxPaginas) {
-    const { contactos, total } = await buscarPersonas(filtros, pagina)
-    if (contactos.length === 0) break
-
-    // Filtrar los que no tienen email (no gastar créditos en vacíos)
-    const conEmail = contactos.filter((c) => c.email)
-    resultado.push(...conEmail)
-
-    if (resultado.length >= filtros.limite) break
-    if (resultado.length >= total) break  // no hay más páginas
-
-    pagina++
-  }
-
-  return resultado.slice(0, filtros.limite)
-}
-
-// ─── Tipos internos ───────────────────────────────────────────────────────────
-interface ApolloPersonaRaw {
+interface PersonaRawEnrich {
+  id: string
   first_name?: string
   last_name?: string
+  name?: string
   title?: string
-  headline?: string
   email?: string
+  email_status?: string
   linkedin_url?: string
   city?: string
   country?: string
   organization?: {
     name?: string
     primary_domain?: string
+    website_url?: string
   }
-  employment_history?: Array<{ organization_name?: string }>
+}
+
+const ENRICH_BATCH = 10  // Apollo bulk_match max por llamada
+
+async function enriquecerPorIds(ids: string[]): Promise<PersonaRawEnrich[]> {
+  const key = API_KEY()
+  if (!key) throw new Error('APOLLO_API_KEY no configurada')
+
+  const results: PersonaRawEnrich[] = []
+
+  // Procesar en batches de 10
+  for (let i = 0; i < ids.length; i += ENRICH_BATCH) {
+    const batch = ids.slice(i, i + ENRICH_BATCH)
+
+    const res = await fetch(`${APOLLO_BASE}/people/bulk_match`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'accept': 'application/json',
+        'x-api-key': key,
+      },
+      body: JSON.stringify({
+        details: batch.map(id => ({ id })),
+        reveal_personal_emails: false,
+        reveal_phone_number: false,
+      }),
+    })
+
+    const text = await res.text()
+    console.log('[Apollo] Enrich batch', i / ENRICH_BATCH + 1, 'status:', res.status)
+
+    if (res.status === 429) throw new Error('Límite de créditos Apollo alcanzado.')
+    if (!res.ok) {
+      console.error('[Apollo] Enrich error:', text.slice(0, 200))
+      continue  // saltar batch fallido, no abortar todo
+    }
+
+    let data: { matches?: PersonaRawEnrich[] }
+    try { data = JSON.parse(text) } catch { continue }
+    results.push(...(data.matches || []))
+  }
+
+  return results
+}
+
+// ─── API pública: buscar hasta N contactos con email ─────────────────────────
+
+export async function buscarHastaObjetivo(
+  filtros: ApolloBusquedaFiltros,
+): Promise<ApolloPersona[]> {
+  const resultado: ApolloPersona[] = []
+  let pagina = 1
+  const perPage = 100     // máximo por página en búsqueda (gratis)
+  const maxPaginas = 5    // límite de seguridad
+
+  while (resultado.length < filtros.limite && pagina <= maxPaginas) {
+    // Paso 1: buscar (gratis)
+    const { personas, total } = await buscarPersonas(filtros, pagina, perPage)
+    if (personas.length === 0) break
+
+    // Filtrar los que tienen email según Apollo
+    const conEmail = personas.filter(p => p.has_email !== false)
+    const idsParaEnriquecer = conEmail
+      .map(p => p.id)
+      .filter(Boolean)
+      .slice(0, filtros.limite - resultado.length)  // solo los que necesitamos
+
+    if (idsParaEnriquecer.length === 0) {
+      if (resultado.length >= total) break
+      pagina++
+      continue
+    }
+
+    // Paso 2: enriquecer para obtener emails reales (1 crédito/email)
+    const enriquecidos = await enriquecerPorIds(idsParaEnriquecer)
+
+    for (const p of enriquecidos) {
+      if (!p.email) continue  // sin email → no gastar más créditos en él
+      resultado.push({
+        id: p.id,
+        nombre: p.first_name || undefined,
+        apellido: p.last_name || undefined,
+        cargo: p.title || undefined,
+        email: p.email,
+        linkedin_url: p.linkedin_url || undefined,
+        empresa: p.organization?.name || undefined,
+        dominio: p.organization?.primary_domain || p.organization?.website_url?.replace(/^https?:\/\/(www\.)?/, '').split('/')[0] || undefined,
+        ciudad: p.city || undefined,
+        pais: p.country || undefined,
+        tiene_email: true,
+      })
+
+      if (resultado.length >= filtros.limite) break
+    }
+
+    if (resultado.length >= filtros.limite) break
+    if (personas.length < perPage) break  // no hay más páginas
+    if ((pagina * perPage) >= total) break
+
+    pagina++
+  }
+
+  console.log(`[Apollo] Resultado final: ${resultado.length} contactos con email`)
+  return resultado
 }
