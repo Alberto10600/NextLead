@@ -126,17 +126,35 @@ export async function GET() {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
   }
 
-  const { data: seguimientos, error } = await supabase
+  // Query seguimientos sin JOIN para evitar problemas de schema cache / PostgREST
+  const { data: segs, error: segsError } = await supabase
     .from('seguimientos')
-    .select('*, contactos(id, nombre, apellido, email, empresa, cargo, dominio, estado, asunto_generado, email_generado, fecha_envio, fecha_apertura, fecha_respuesta, notas)')
+    .select('*')
     .eq('user_id', user.id)
     .order('fecha_programada', { ascending: true })
 
-  if (error) {
-    console.error('[seguimientos GET] error:', error)
-    return NextResponse.json({ error: error.message, code: error.code, seguimientos: [] })
+  if (segsError) {
+    console.error('[seguimientos GET] error segs:', segsError)
+    return NextResponse.json({ error: segsError.message, seguimientos: [] }, { status: 500 })
   }
 
-  console.log('[seguimientos GET] user:', user.id, '| rows:', seguimientos?.length ?? 0)
-  return NextResponse.json({ seguimientos: seguimientos || [] })
+  if (!segs || segs.length === 0) {
+    return NextResponse.json({ seguimientos: [] })
+  }
+
+  // Obtener contactos por separado
+  const contactoIds = [...new Set(segs.map((s) => s.contacto_id))]
+  const { data: contactos, error: contactosError } = await supabase
+    .from('contactos')
+    .select('id, nombre, apellido, email, empresa, cargo, dominio, estado, asunto_generado, email_generado, fecha_envio, fecha_apertura, fecha_respuesta, notas')
+    .in('id', contactoIds)
+
+  if (contactosError) {
+    console.error('[seguimientos GET] error contactos:', contactosError)
+  }
+
+  const contactosMap = Object.fromEntries((contactos || []).map((c) => [c.id, c]))
+  const resultado = segs.map((s) => ({ ...s, contactos: contactosMap[s.contacto_id] || null }))
+
+  return NextResponse.json({ seguimientos: resultado })
 }
