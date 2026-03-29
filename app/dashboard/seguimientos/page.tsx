@@ -500,7 +500,7 @@ export default function SeguimientosPage() {
                     </div>
                   ) : (
                     <p className="text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
-                      Sin borrador todavía. Haz clic en "Generar borrador" para previsualizarlo antes de enviarlo.
+                      Sin borrador todavía. Haz clic en &quot;Generar borrador&quot; para previsualizarlo antes de enviarlo.
                     </p>
                   )}
                 </div>
