@@ -1193,12 +1193,26 @@ export default function DetalleCampanaPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">Sector objetivo</label>
-                  <input
-                    value={sectorObjetivo}
-                    onChange={(e) => setSectorObjetivo(e.target.value)}
-                    placeholder="ej. Ecommerce, SaaS..."
-                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
-                  />
+                  {sectorObjetivo ? (
+                    <div className="flex items-center gap-2 py-1">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-700 font-medium">
+                        {sectorObjetivo}
+                      </span>
+                      <button
+                        onClick={() => setSectorObjetivo('')}
+                        className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        cambiar
+                      </button>
+                    </div>
+                  ) : (
+                    <input
+                      value={sectorObjetivo}
+                      onChange={(e) => setSectorObjetivo(e.target.value)}
+                      placeholder="ej. Ecommerce, SaaS..."
+                      className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
+                    />
+                  )}
                 </div>
                 {/* P2-6 tono */}
                 <div>
