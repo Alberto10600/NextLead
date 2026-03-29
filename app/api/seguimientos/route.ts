@@ -146,11 +146,12 @@ export async function GET() {
   const contactoIds = Array.from(new Set(segs.map((s) => s.contacto_id)))
   const { data: contactos, error: contactosError } = await supabase
     .from('contactos')
-    .select('id, nombre, apellido, email, empresa, cargo, dominio, estado, asunto_generado, email_generado, fecha_envio, fecha_apertura, fecha_respuesta, notas')
+    .select('*')
     .in('id', contactoIds)
 
   if (contactosError) {
     console.error('[seguimientos GET] error contactos:', contactosError)
+    // Devolver seguimientos sin info de contacto antes que fallar
   }
 
   const contactosMap = Object.fromEntries((contactos || []).map((c) => [c.id, c]))
