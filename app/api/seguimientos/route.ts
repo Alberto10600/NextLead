@@ -143,7 +143,7 @@ export async function GET() {
   }
 
   // Obtener contactos por separado
-  const contactoIds = [...new Set(segs.map((s) => s.contacto_id))]
+  const contactoIds = Array.from(new Set(segs.map((s) => s.contacto_id)))
   const { data: contactos, error: contactosError } = await supabase
     .from('contactos')
     .select('id, nombre, apellido, email, empresa, cargo, dominio, estado, asunto_generado, email_generado, fecha_envio, fecha_apertura, fecha_respuesta, notas')
