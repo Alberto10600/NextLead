@@ -49,12 +49,14 @@ function ConversionBar({ label, value, total, color }: { label: string; value: n
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/campanas').then(r => r.json()),
-      fetch('/api/seguimientos').then(r => r.json()),
-      fetch('/api/contactos?limit=200').then(r => r.json()),
+      fetch('/api/campanas').then(r => r.json()).catch(() => ({ campanas: [] })),
+      fetch('/api/seguimientos').then(r => r.json()).catch(() => ({ seguimientos: [] })),
+      fetch('/api/contactos?limit=200').then(r => r.json()).catch(() => ({ contactos: [] })),
     ]).then(([campData, segData, contData]) => {
       const campanas: Campana[] = campData.campanas || []
       const seguimientos = segData.seguimientos || []
@@ -90,8 +92,11 @@ export default function DashboardPage() {
         totalRespondidos,
         totalContactos: contactos.length,
       })
-    }).catch(console.error).finally(() => setLoading(false))
-  }, [])
+    }).catch((e) => {
+      console.error('[dashboard] error:', e)
+      setError('Error cargando el dashboard')
+    }).finally(() => setLoading(false))
+  }, [refreshKey])
 
   if (loading) {
     return (
@@ -108,7 +113,18 @@ export default function DashboardPage() {
     )
   }
 
-  if (!data) return null
+  if (error || !data) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-64">
+        <div className="text-center">
+          <p className="text-sm text-gray-500 mb-3">{error || 'Error cargando el dashboard'}</p>
+          <button onClick={() => { setError(null); setLoading(true); setRefreshKey(k => k + 1) }} className="text-xs text-orange-500 hover:text-orange-600 font-medium">
+            Reintentar
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const { campanas, seguimientosPendientes, seguimientosVencidos, contactosRecientes, totalEnviados, totalAbiertos, totalRespondidos, totalContactos } = data
   const tasaApertura = totalEnviados > 0 ? Math.round((totalAbiertos / totalEnviados) * 100) : 0
