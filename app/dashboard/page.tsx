@@ -301,37 +301,19 @@ export default function DashboardPage() {
 
         </div>
 
-        {/* Acciones rápidas */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Acciones rápidas</p>
-          <div className="flex items-center gap-3 flex-wrap">
-            {[
-              { label: 'Nueva campaña', href: '/dashboard/campanas/nueva', icon: '＋', primary: true },
-              { label: 'Ver seguimientos', href: '/dashboard/seguimientos', icon: '🔔', badge: seguimientosPendientes > 0 ? seguimientosPendientes : undefined },
-              { label: 'Pipeline', href: '/dashboard/pipeline', icon: '📊' },
-              { label: 'Contactos', href: '/dashboard/contactos', icon: '👥' },
-              { label: 'Plantillas', href: '/dashboard/plantillas', icon: '📝' },
-            ].map(({ label, href, icon, primary, badge }) => (
-              <Link
-                key={label}
-                href={href}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors relative ${
-                  primary
-                    ? 'bg-orange-500 text-white hover:bg-orange-600'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-                }`}
-              >
-                <span>{icon}</span>
-                {label}
-                {badge !== undefined && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                    {badge}
-                  </span>
-                )}
-              </Link>
-            ))}
+        {/* Link a analytics */}
+        <Link href="/dashboard/analytics" className="flex items-center justify-between px-5 py-3.5 bg-white border border-gray-200 rounded-xl hover:border-orange-200 hover:bg-orange-50/30 transition-all group">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-800">Ver análisis completo</p>
+              <p className="text-xs text-gray-400">Atribución de follow-ups, timing, calidad vs conversión</p>
+            </div>
           </div>
-        </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 group-hover:text-orange-400 transition-colors"><path d="M9 5l7 7-7 7"/></svg>
+        </Link>
 
       </div>
     </div>
