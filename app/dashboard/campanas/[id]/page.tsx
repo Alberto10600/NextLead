@@ -8,6 +8,7 @@ import type { HunterContacto } from '@/lib/hunter'
 import TablaContactos from '@/components/dashboard/TablaContactos'
 import Toast from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
+import ApolloSearchPanel from '@/components/dashboard/ApolloSearchPanel'
 
 type Fase = 'idle' | 'buscando' | 'listo' | 'generando' | 'analizando' | 'enviando' | 'completado'
 
@@ -702,6 +703,18 @@ export default function DetalleCampanaPage() {
             </div>
           ))}
         </div>
+
+        {/* Apollo CTA — cuando hay perfil configurado y no hay contactos */}
+        {!tieneContactos && !enProceso && campana.preferencias_busqueda?.perfil_apollo && (
+          <ApolloSearchPanel
+            campana={campana}
+            onContactosGuardados={(n) => {
+              setToast({ msg: `${n} contactos guardados`, tipo: 'success' })
+              cargarCampana()
+            }}
+            onError={(msg) => setToast({ msg, tipo: 'error' })}
+          />
+        )}
 
         {/* Panel búsqueda — primera vez */}
         {!tieneContactos && !enProceso && (

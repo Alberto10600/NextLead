@@ -44,10 +44,20 @@ export interface BusquedaHistorial {
   filtro_cargo?: string
 }
 
+export interface PerfilApollo {
+  id: string
+  label: string
+  titulos: string[]
+  seniorities: string[]
+  industrias: string[]
+}
+
 export interface PreferenciasBusqueda {
   max_por_dominio?: number
   filtro_cargo?: string
   historial?: BusquedaHistorial[]
+  objetivo_contactos?: number
+  perfil_apollo?: PerfilApollo
 }
 
 export interface Campana {
