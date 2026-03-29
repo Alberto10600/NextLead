@@ -405,10 +405,10 @@ export default function SeguimientosPage() {
                   </div>
                 </div>
 
-                {/* Email enviado */}
+                {/* Email original */}
                 {detalle.contactos.email_generado && (
                   <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Email enviado</p>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Email original enviado</p>
                     <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 space-y-2">
                       <p className="text-xs text-gray-500">
                         <span className="font-medium">Asunto:</span> {detalle.contactos.asunto_generado}
@@ -417,6 +417,38 @@ export default function SeguimientosPage() {
                         {detalle.contactos.email_generado}
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Contenido del follow-up */}
+                {(detalle.asunto || detalle.cuerpo) && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                      Follow-up #{detalle.numero_seguimiento}
+                      {detalle.estado === 'enviado' ? ' — enviado' : ' — pendiente de envío'}
+                    </p>
+                    <div className={`border rounded-lg p-3 space-y-2 ${detalle.estado === 'enviado' ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
+                      {detalle.asunto && (
+                        <p className="text-xs text-gray-600">
+                          <span className="font-medium">Asunto:</span> {detalle.asunto}
+                        </p>
+                      )}
+                      {detalle.cuerpo && (
+                        <div className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">
+                          {detalle.cuerpo}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Si no hay contenido generado aún */}
+                {!detalle.asunto && !detalle.cuerpo && detalle.estado === 'pendiente' && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Follow-up #{detalle.numero_seguimiento}</p>
+                    <p className="text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                      El contenido se generará con IA cuando proceses este seguimiento en modo real.
+                    </p>
                   </div>
                 )}
 

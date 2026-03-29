@@ -194,17 +194,46 @@ export async function generarEmailSeguimiento(params: {
 }): Promise<{ asunto: string; cuerpo: string }> {
   const { nombre, empresa, emailAnterior, numeroSeguimiento, descripcionAgencia } = params
 
+  const estrategias: Record<number, string> = {
+    1: `SEGUIMIENTO #1 — Tono: casual, sin presión.
+Objetivo: comprobar que recibió el primer email. Muy breve (3-4 líneas máx).
+Enfoque: "Solo quería asegurarme de que te llegó. Si no es el momento, dímelo y no te molesto más."
+NO repitas la propuesta de valor del email anterior. NO vendas nada. Solo verificar recepción.`,
+
+    2: `SEGUIMIENTO #2 — Tono: propositivo, ángulo nuevo.
+Objetivo: presentar un ángulo o caso de uso que NO aparece en el email anterior.
+Enfoque: ejemplo concreto de resultado conseguido con otro cliente del mismo sector, o un punto de dolor diferente.
+Añade una pregunta directa al final que se responda en 10 segundos.`,
+
+    3: `SEGUIMIENTO #3 — Tono: definitivo, respetuoso.
+Objetivo: cierre de la secuencia. Si no hay respuesta, se respeta y se cierra.
+Enfoque: "Entiendo que quizás no es el momento o no encaja. Es mi último mensaje. Si en algún momento cambia algo, aquí me tienes."
+Muy breve. Sin presión. Deja la puerta abierta de forma elegante.`,
+  }
+
+  const estrategia = estrategias[numeroSeguimiento] || `SEGUIMIENTO #${numeroSeguimiento} — Tono: breve y directo. Ángulo diferente al email anterior. Máximo 4 líneas.`
+
   const message = await getAnthropic().messages.create({
     model: process.env.EMAIL_GENERATION_MODEL || 'claude-haiku-4-5-20251001',
-    max_tokens: 300,
-    system: 'Eres un experto en ventas B2B. Escribes follow-ups breves y directos. Responde en JSON estricto sin markdown.',
+    max_tokens: 350,
+    system: 'Eres un experto en ventas B2B en España. Escribes follow-ups que consiguen respuesta porque son honestos y no insistentes. Responde en JSON estricto sin markdown.',
     messages: [{
       role: 'user',
-      content: `Escribe un email de seguimiento #${numeroSeguimiento} para ${nombre || 'el contacto'} de ${empresa || 'la empresa'}.
-Email anterior enviado: ${emailAnterior}
+      content: `Contacto: ${nombre || 'el contacto'} · Empresa: ${empresa || 'la empresa'}
 Mi agencia: ${descripcionAgencia}
 
-El seguimiento debe ser más breve que el original, diferente enfoque, recordatorio no insistente.
+Email original que ya se envió:
+${emailAnterior}
+
+---
+${estrategia}
+
+REGLAS:
+- Asunto: diferente al del email original, máx 8 palabras
+- Cuerpo: máx 80 palabras
+- PROHIBIDO repetir el asunto o el gancho del email original
+- PROHIBIDO: 'espero', 'estimado', 'me pongo en contacto', 'solución integral', 'innovador'
+- Escribe en primera persona, tono humano y directo
 
 Responde SOLO con JSON: {"asunto": "...", "cuerpo": "..."}`
     }],
