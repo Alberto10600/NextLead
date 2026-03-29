@@ -49,6 +49,7 @@ export default function SeguimientosPage() {
   const [notas, setNotas] = useState('')
   const [guardandoNotas, setGuardandoNotas] = useState(false)
   const [modoSeguimiento, setModoSeguimiento] = useState<'test' | 'real'>('test')
+  const [generandoPreview, setGenerandoPreview] = useState(false)
 
   const cargar = async () => {
     try {
@@ -163,6 +164,27 @@ export default function SeguimientosPage() {
   const abrirDetalle = (s: SeguimientoConContacto) => {
     setDetalle(s)
     setNotas(s.contactos?.notas || '')
+  }
+
+  const generarBorrador = async (segId: string) => {
+    setGenerandoPreview(true)
+    try {
+      const res = await fetch(`/api/seguimientos/${segId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accion: 'generar' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error generando')
+      // Update detalle in place so content renders immediately
+      setDetalle((prev) => prev ? { ...prev, asunto: data.asunto, cuerpo: data.cuerpo } : prev)
+      // Also update the list
+      setSeguimientos((prev) => prev.map((s) => s.id === segId ? { ...s, asunto: data.asunto, cuerpo: data.cuerpo } : s))
+    } catch (e) {
+      setToast({ msg: (e as Error).message, tipo: 'error' })
+    } finally {
+      setGenerandoPreview(false)
+    }
   }
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>
@@ -421,12 +443,49 @@ export default function SeguimientosPage() {
                 )}
 
                 {/* Contenido del follow-up */}
-                {(detalle.asunto || detalle.cuerpo) && (
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Follow-up #{detalle.numero_seguimiento}
-                      {detalle.estado === 'enviado' ? ' — enviado' : ' — pendiente de envío'}
+                      {detalle.estado === 'enviado' && <span className="ml-1 text-emerald-500 normal-case">· enviado</span>}
+                      {detalle.estado === 'pendiente' && (detalle.asunto || detalle.cuerpo) && <span className="ml-1 text-amber-500 normal-case">· borrador</span>}
                     </p>
+                    {!detalle.asunto && !detalle.cuerpo && detalle.estado === 'pendiente' && (
+                      <button
+                        onClick={() => generarBorrador(detalle.id)}
+                        disabled={generandoPreview}
+                        className="flex items-center gap-1.5 text-xs text-orange-500 hover:text-orange-600 font-medium disabled:opacity-50 transition-colors"
+                      >
+                        {generandoPreview ? (
+                          <>
+                            <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                            </svg>
+                            Generando...
+                          </>
+                        ) : (
+                          <>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                            </svg>
+                            Generar borrador
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {(detalle.asunto || detalle.cuerpo) && detalle.estado === 'pendiente' && (
+                      <button
+                        onClick={() => generarBorrador(detalle.id)}
+                        disabled={generandoPreview}
+                        className="text-[11px] text-gray-400 hover:text-orange-500 disabled:opacity-50 transition-colors"
+                      >
+                        {generandoPreview ? 'Regenerando...' : 'Regenerar'}
+                      </button>
+                    )}
+                  </div>
+
+                  {(detalle.asunto || detalle.cuerpo) ? (
                     <div className={`border rounded-lg p-3 space-y-2 ${detalle.estado === 'enviado' ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
                       {detalle.asunto && (
                         <p className="text-xs text-gray-600">
@@ -434,23 +493,17 @@ export default function SeguimientosPage() {
                         </p>
                       )}
                       {detalle.cuerpo && (
-                        <div className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        <div className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed border-t border-black/5 pt-2 mt-1">
                           {detalle.cuerpo}
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
-
-                {/* Si no hay contenido generado aún */}
-                {!detalle.asunto && !detalle.cuerpo && detalle.estado === 'pendiente' && (
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Follow-up #{detalle.numero_seguimiento}</p>
-                    <p className="text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
-                      El contenido se generará con IA cuando proceses este seguimiento en modo real.
+                  ) : (
+                    <p className="text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
+                      Sin borrador todavía. Haz clic en "Generar borrador" para previsualizarlo antes de enviarlo.
                     </p>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Notas */}
                 <div>
