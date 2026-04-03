@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { SECTORES_HUNTER, PAISES_HUNTER } from '@/types'
+import { SECTORES, PAISES } from '@/types'
 
 // ─── Perfiles Apollo ──────────────────────────────────────────────────────────
 const PERFILES = [
@@ -135,8 +135,8 @@ export default function NuevaCampanaPage() {
   const [tono, setTono] = useState<'cercano' | 'formal' | 'millennial' | 'tecnico'>('cercano')
   const [numFollowups, setNumFollowups] = useState(2)
 
-  const sectorObj = SECTORES_HUNTER.find(s => s.value === sectorValue)
-  const paisObj = PAISES_HUNTER.find(p => p.value === paisValue)
+  const sectorObj = SECTORES.find(s => s.value === sectorValue)
+  const paisObj = PAISES.find(p => p.value === paisValue)
   const perfilObj = PERFILES.find(p => p.id === perfilId)
   const objetivoFinal = objetivoCustomActivo ? (parseInt(objetivoCustom) || 0) : objetivo
 
@@ -184,13 +184,6 @@ export default function NuevaCampanaPage() {
           tono,
           dias_seguimiento: diasSeguimiento,
           cargos_objetivo: perfilObj.titulos,
-          filtros_hunter: {
-            sector: sectorValue,
-            pais: paisValue,
-            tamanos: [],
-            departamentos: [],
-            seniority: [],
-          },
           preferencias_busqueda: {
             objetivo_contactos: objetivoFinal,
             max_por_dominio: 1,
@@ -256,7 +249,7 @@ export default function NuevaCampanaPage() {
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Sector</p>
                 <div className="grid grid-cols-2 gap-2">
-                  {SECTORES_HUNTER.map(s => (
+                  {SECTORES.map(s => (
                     <button key={s.value} onClick={() => setSectorValue(s.value)}
                       className={`text-left px-3 py-2.5 rounded-lg border text-sm transition-all ${
                         sectorValue === s.value
@@ -272,7 +265,7 @@ export default function NuevaCampanaPage() {
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">País</p>
                 <div className="grid grid-cols-3 gap-2">
-                  {PAISES_HUNTER.map(p => (
+                  {PAISES.map(p => (
                     <button key={p.value} onClick={() => setPaisValue(p.value)}
                       className={`px-3 py-2 rounded-lg border text-sm transition-all ${
                         paisValue === p.value

@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
   const body = await request.json()
   const { nombre, sector, pais, descripcion_agencia, tono, dias_seguimiento,
-          cargos_objetivo, filtros_hunter, preferencias_busqueda } = body
+          cargos_objetivo, preferencias_busqueda } = body
 
   if (!nombre?.trim()) {
     return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
@@ -29,7 +29,6 @@ export async function POST(request: Request) {
       estado: 'borrador',
       ...(tono && { tono }),
       ...(dias_seguimiento && { dias_seguimiento }),
-      ...(filtros_hunter && { filtros_hunter }),
       ...(preferencias_busqueda && { preferencias_busqueda }),
     })
     .select()

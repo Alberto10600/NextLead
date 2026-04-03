@@ -40,7 +40,7 @@ export default function FormularioCampana() {
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-1">Nueva campaña</h2>
         <p className="text-sm text-gray-400">
-          Crea la campaña y añade los dominios que quieres prospectar con Hunter.
+          Crea la campaña y busca contactos reales por cargo y sector con Apollo.
         </p>
       </div>
 

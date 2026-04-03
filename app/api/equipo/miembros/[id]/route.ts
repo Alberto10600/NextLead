@@ -11,19 +11,22 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
   // Verify the member belongs to a team owned by current user
-  const { data: miembro } = await supabase
+  const { data: miembro, error: miembroError } = await supabase
     .from('miembros_equipo')
     .select('id, equipo_id, user_id, email')
     .eq('id', params.id)
-    .single()
+    .maybeSingle()
 
+  if (miembroError) return NextResponse.json({ error: miembroError.message }, { status: 500 })
   if (!miembro) return NextResponse.json({ error: 'Miembro no encontrado' }, { status: 404 })
 
-  const { data: equipo } = await supabase
+  const { data: equipo, error: equipoError } = await supabase
     .from('equipos')
     .select('owner_id')
     .eq('id', miembro.equipo_id)
-    .single()
+    .maybeSingle()
+
+  if (equipoError) return NextResponse.json({ error: equipoError.message }, { status: 500 })
 
   if (equipo?.owner_id !== user.id) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
@@ -34,7 +37,8 @@ export async function DELETE(
     return NextResponse.json({ error: 'No puedes eliminarte a ti mismo del equipo' }, { status: 400 })
   }
 
-  await supabase.from('miembros_equipo').delete().eq('id', params.id)
+  const { error: delError } = await supabase.from('miembros_equipo').delete().eq('id', params.id)
+  if (delError) return NextResponse.json({ error: delError.message }, { status: 500 })
 
   // Clear the user's equipo_id from their profile if they were active
   if (miembro.user_id) {

@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import type { Campana, Contacto, Plantilla, Tono, PreferenciasBusqueda, BusquedaHistorial } from '@/types'
-import type { HunterContacto } from '@/lib/hunter'
+import type { Campana, Contacto, Plantilla, Tono } from '@/types'
 import TablaContactos from '@/components/dashboard/TablaContactos'
 import Toast from '@/components/ui/Toast'
 import Spinner from '@/components/ui/Spinner'
@@ -20,50 +19,19 @@ const estadoBadge: Record<string, { bg: string; text: string; label: string }> =
   completada: { bg: 'bg-gray-100',    text: 'text-gray-500',    label: 'Completada' },
 }
 
-function parseDominios(texto: string): string[] {
-  return texto
-    .split(/[\n,;]+/)
-    .map((d) => d.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0])
-    .filter((d) => d.length > 2 && d.includes('.'))
-}
-
 export default function DetalleCampanaPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [campana, setCampana] = useState<Campana | null>(null)
   const [contactos, setContactos] = useState<Contacto[]>([])
   const [fase, setFase] = useState<Fase>('idle')
-  const [stats, setStats] = useState({ sinResultados: 0 })
   const [toast, setToast] = useState<{ msg: string; tipo: 'success' | 'error' | 'info' } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [dominiosTexto, setDominiosTexto] = useState('')
-  const [mostrarAnadir, setMostrarAnadir] = useState(false)
-  const [dominiosNuevos, setDominiosNuevos] = useState('')
   const [mostrarGenerador, setMostrarGenerador] = useState(false)
   const [descAgencia, setDescAgencia] = useState('')
   const [sectorObjetivo, setSectorObjetivo] = useState('')
   const [progGeneracion, setProgGeneracion] = useState<{ hecho: number; total: number } | null>(null)
   const [creandoSeguimientos, setCreandoSeguimientos] = useState(false)
-  const [modoBusqueda, setModoBusqueda] = useState<'dominios' | 'sector'>('dominios')
-  const [sectorBusqueda, setSectorBusqueda] = useState('')
-  const [paisBusqueda, setPaisBusqueda] = useState('España')
-  const [regionBusqueda, setRegionBusqueda] = useState('')
-  const [buscandoSector, setBuscandoSector] = useState(false)
-  const [sugirendoPerfiles, setSugirendoPerfiles] = useState(false)
-  const [perfilesSugeridos, setPerfilesSugeridos] = useState<string[]>([])  // chips sugeridos por IA
-  const [maxPorDominioInput, setMaxPorDominioInput] = useState<string>('3')  // custom text input
-  const [historialBusquedas, setHistorialBusquedas] = useState<BusquedaHistorial[]>([])
-  const [mostrarHistorial, setMostrarHistorial] = useState(false)
-  const [dominiosSugeridos, setDominiosSugeridos] = useState<string[]>([])
-  const [modoEnvio, setModoEnvio] = useState<'test' | 'real'>('test')
-  // Capa 1: límite de contactos por dominio
-  const [maxPorDominio, setMaxPorDominio] = useState<number>(3)
-  // Capa 2: contactos pendientes de filtrado (entre Hunter y guardar)
-  const [contactosPrevio, setContactosPrevio] = useState<HunterContacto[]>([])
-
-  const [filtroCargo, setFiltroCargo] = useState('')
-  // Capa 3: selección de dominios sugeridos por IA
-  const [dominiosSeleccionados, setDominiosSeleccionados] = useState<Set<string>>(new Set())
   // P2-6 tono
   const [tono, setTono] = useState<Tono>('cercano')
   // P2-4 días de seguimiento
@@ -73,6 +41,7 @@ export default function DetalleCampanaPage() {
   const [guardandoPlantilla, setGuardandoPlantilla] = useState(false)
   // P2-3 throttling
   const [limiteDiario, setLimiteDiario] = useState(0)
+  const [modoEnvio, setModoEnvio] = useState<'test' | 'real'>('test')
 
   const cargarCampana = useCallback(async () => {
     const res = await fetch(`/api/campanas/${id}`)
@@ -82,22 +51,12 @@ export default function DetalleCampanaPage() {
       const lista = data.contactos || []
       setContactos(lista)
       if (lista.length > 0) setFase('listo')
-      if (data.campana?.dominios?.length) {
-        setDominiosTexto(data.campana.dominios.join('\n'))
-      }
       // Pre-fill generator fields from saved campaign data
       if (data.campana?.descripcion_agencia) setDescAgencia(data.campana.descripcion_agencia)
       if (data.campana?.sector) setSectorObjetivo(data.campana.sector)
       if (data.campana?.tono) setTono(data.campana.tono as Tono)
       if (data.campana?.dias_seguimiento?.length) setDiasSeguimiento(data.campana.dias_seguimiento)
       if (data.campana?.limite_diario !== undefined) setLimiteDiario(data.campana.limite_diario)
-      // Cargar preferencias de búsqueda guardadas
-      const prefs = data.campana?.preferencias_busqueda
-      if (prefs) {
-        if (prefs.max_por_dominio) { setMaxPorDominio(prefs.max_por_dominio); setMaxPorDominioInput(String(prefs.max_por_dominio)) }
-        if (prefs.filtro_cargo) setFiltroCargo(prefs.filtro_cargo)
-        if (prefs.historial?.length) setHistorialBusquedas(prefs.historial)
-      }
     }
     setLoading(false)
   }, [id])
@@ -121,181 +80,6 @@ export default function DetalleCampanaPage() {
     }, 800)
     return () => clearTimeout(timer)
   }, [descAgencia]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const guardarPreferencias = async (extra?: Partial<PreferenciasBusqueda>) => {
-    const nuevoHistorial = extra?.historial ?? historialBusquedas
-    const prefs: PreferenciasBusqueda = {
-      max_por_dominio: maxPorDominio,
-      filtro_cargo: filtroCargo || undefined,
-      historial: nuevoHistorial.slice(0, 5),
-      ...extra,
-    }
-    await fetch(`/api/campanas/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ preferencias_busqueda: prefs }),
-    })
-  }
-
-  const dominiosParsed = parseDominios(dominiosTexto)
-  const dominiosNuevosParsed = parseDominios(dominiosNuevos)
-
-  // Guardar dominios en la BD
-  const guardarDominios = async (dominios: string[]) => {
-    await fetch(`/api/campanas/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dominios }),
-    })
-  }
-
-  // Prefijos de email genérico a excluir (siempre activo, silencioso)
-  const EMAILS_GENERICOS = ['info', 'contact', 'contacto', 'hola', 'hello', 'admin', 'soporte',
-    'support', 'noreply', 'no-reply', 'ventas', 'marketing', 'ayuda', 'help', 'accounts',
-    'billing', 'reception', 'recepcion', 'general', 'enquiries', 'sales', 'office', 'oficina']
-
-  // Sinónimos para que "CEO" también coincida con "Chief Executive Officer", "Founder", etc.
-  const SINONIMOS_CARGO: Record<string, string[]> = {
-    'ceo':       ['chief executive', 'director ejecutivo', 'director general', 'founder', 'cofound', 'co-found', 'fundador', 'presidente'],
-    'cto':       ['chief technology', 'director de tecnología', 'director tecnológico', 'tech lead', 'head of tech', 'head of engineering'],
-    'cmo':       ['chief marketing', 'director de marketing', 'marketing director', 'head of marketing', 'vp marketing'],
-    'cfo':       ['chief financial', 'director financiero', 'finance director', 'head of finance'],
-    'coo':       ['chief operating', 'director de operaciones', 'operations director'],
-    'cso':       ['chief sales', 'director de ventas', 'sales director', 'head of sales', 'vp sales'],
-    'founder':   ['fundador', 'cofound', 'co-found', 'ceo', 'owner', 'propietario'],
-    'director':  ['head of', 'vp ', 'vice president', 'responsable de'],
-    'manager':   ['gerente', 'responsable', 'lead ', 'jefe de'],
-    'growth':    ['crecimiento', 'adquisición', 'acquisition'],
-  }
-
-  const aplicarFiltros = (lista: HunterContacto[]) => {
-    let filtrada = lista
-
-    // Excluir genéricos siempre (silencioso)
-    filtrada = filtrada.filter((c) => {
-      const prefijo = c.email.split('@')[0].toLowerCase()
-      return !EMAILS_GENERICOS.some((g) => prefijo === g || prefijo.startsWith(g + '.'))
-    })
-
-    if (filtroCargo.trim()) {
-      const keywords = filtroCargo.toLowerCase().split(',').map((k) => k.trim()).filter(Boolean)
-      filtrada = filtrada.filter((c) => {
-        // Contactos sin cargo: los incluimos si buscamos roles muy genéricos,
-        // los excluimos si el filtro es específico
-        const cargo = (c.cargo || '').toLowerCase()
-        if (!cargo) {
-          // Sin cargo → incluir solo si algún keyword es muy corto (probable error de filtro)
-          return false
-        }
-        return keywords.some((kw) => {
-          // Coincidencia directa
-          if (cargo.includes(kw)) return true
-          // Coincidencia por sinónimos
-          const sinonimos = SINONIMOS_CARGO[kw] || []
-          if (sinonimos.some((s) => cargo.includes(s))) return true
-          // Si el cargo contiene el kw como palabra completa (ej "ceo" en "ceo & founder")
-          const regex = new RegExp(`\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
-          return regex.test(cargo)
-        })
-      })
-    }
-    return filtrada
-  }
-
-  const buscarContactos = async (dominios: string[]) => {
-    if (!campana || dominios.length === 0) return
-    setFase('buscando')
-
-    try {
-      // Guardar dominios en BD antes de buscar
-      await guardarDominios(Array.from(new Set([...dominiosParsed, ...dominios])))
-
-      const res = await fetch('/api/enriquecer-contactos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dominios, max_por_dominio: maxPorDominio }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error buscando contactos')
-
-      if (data.total === 0) {
-        setToast({ msg: 'Hunter no encontró contactos en estos dominios.', tipo: 'info' })
-        setFase(contactos.length > 0 ? 'listo' : 'idle')
-        return
-      }
-
-      // Capa 2: mostrar panel de filtrado antes de guardar
-      setContactosPrevio(data.contactos)
-      setStats({ sinResultados: data.dominios_sin_resultados?.length || 0 })
-      setFase('listo')
-      // Guardar preferencias actuales
-      await guardarPreferencias()
-    } catch (e: unknown) {
-      setToast({ msg: (e as Error).message, tipo: 'error' })
-      setFase(contactos.length > 0 ? 'listo' : 'idle')
-    }
-  }
-
-  const guardarContactosFiltrados = async () => {
-    const filtrados = contactosFiltradosPrevio
-    if (filtrados.length === 0) {
-      setToast({ msg: 'Los filtros excluyen todos los contactos. Ajusta los criterios.', tipo: 'info' })
-      return
-    }
-    setFase('buscando')
-    try {
-      const res = await fetch('/api/guardar-contactos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contactos: filtrados, campana_id: id }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error guardando contactos')
-
-      setContactos(prev => [...prev, ...data.contactos])
-      setContactosPrevio([])
-      setFase('listo')
-      setMostrarAnadir(false)
-      setDominiosNuevos('')
-      const cola = data.en_cola > 0 ? ` · ${data.en_cola} superan el límite del plan` : ''
-      setToast({ msg: `${data.contactos.length} contactos guardados${cola}`, tipo: 'success' })
-      // Añadir entrada al historial
-      const entrada: BusquedaHistorial = {
-        fecha: new Date().toISOString(),
-        dominios: dominiosParsed.slice(0, 10),
-        encontrados: contactosFiltradosPrevio.length + contactosExcluidosPrevio,
-        guardados: data.contactos.length,
-        filtro_cargo: filtroCargo || undefined,
-      }
-      const nuevoHistorial = [entrada, ...historialBusquedas].slice(0, 5)
-      setHistorialBusquedas(nuevoHistorial)
-      await guardarPreferencias({ historial: nuevoHistorial })
-    } catch (e: unknown) {
-      setToast({ msg: (e as Error).message, tipo: 'error' })
-      setFase(contactos.length > 0 ? 'listo' : 'idle')
-    }
-  }
-
-  const buscarPorSector = async () => {
-    if (!sectorBusqueda.trim()) return
-    setBuscandoSector(true)
-    setDominiosSugeridos([])
-    try {
-      const res = await fetch('/api/buscar-por-sector', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sector: sectorBusqueda, pais: paisBusqueda, cantidad: 15, region: regionBusqueda || undefined }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      setDominiosSugeridos(data.dominios)
-      setDominiosSeleccionados(new Set(data.dominios))
-    } catch (e: unknown) {
-      setToast({ msg: (e as Error).message, tipo: 'error' })
-    } finally {
-      setBuscandoSector(false)
-    }
-  }
 
   const excluirContacto = (contactoId: string) => {
     setContactos((prev) => prev.filter((c) => c.id !== contactoId))
@@ -326,32 +110,6 @@ export default function DetalleCampanaPage() {
     setDescAgencia(p.descripcion)
     if (p.sector) setSectorObjetivo(p.sector)
     setTono(p.tono)
-  }
-
-  const sugerirPerfiles = async () => {
-    const desc = campana?.descripcion_agencia || descAgencia
-    if (!desc?.trim()) {
-      setToast({ msg: 'Primero completa la descripción de tu servicio en "Generar emails IA"', tipo: 'info' })
-      return
-    }
-    setSugirendoPerfiles(true)
-    try {
-      const res = await fetch('/api/sugerir-perfiles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ descripcion: desc }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      if (data.perfiles?.length) {
-        setPerfilesSugeridos(data.perfiles)
-        setToast({ msg: `${data.perfiles.length} perfiles sugeridos — haz clic para activarlos`, tipo: 'success' })
-      }
-    } catch (e: unknown) {
-      setToast({ msg: (e as Error).message, tipo: 'error' })
-    } finally {
-      setSugirendoPerfiles(false)
-    }
   }
 
   const analizarContactos = async () => {
@@ -501,9 +259,6 @@ export default function DetalleCampanaPage() {
   const enProceso = fase === 'buscando' || fase === 'enviando' || fase === 'generando' || fase === 'analizando'
   const tieneContactos = contactos.length > 0
   const sinEmailGenerado = contactos.filter((c) => !c.email_generado).length
-  // Capa 2: precompute filtered contacts for the filter panel
-  const contactosFiltradosPrevio = aplicarFiltros(contactosPrevio)
-  const contactosExcluidosPrevio = contactosPrevio.length - contactosFiltradosPrevio.length
 
   return (
     <div className="min-h-full">
@@ -529,7 +284,7 @@ export default function DetalleCampanaPage() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
-              <span>Buscando en Hunter...</span>
+              <span>Buscando contactos...</span>
             </div>
           )}
           {fase === 'enviando' && (
@@ -597,7 +352,7 @@ export default function DetalleCampanaPage() {
           {/* Generar emails con IA */}
           {tieneContactos && !enProceso && sinEmailGenerado > 0 && (
             <button
-              onClick={() => { setMostrarGenerador((v) => !v); setMostrarAnadir(false) }}
+              onClick={() => setMostrarGenerador((v) => !v)}
               className={`inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border transition-colors ${
                 mostrarGenerador
                   ? 'bg-orange-50 text-orange-600 border-orange-200'
@@ -660,42 +415,16 @@ export default function DetalleCampanaPage() {
               Seguimientos
             </button>
           )}
-
-          {/* Añadir dominios (cuando ya hay contactos) */}
-          {tieneContactos && !enProceso && (
-            <button
-              onClick={() => { setMostrarAnadir((v) => !v); setMostrarGenerador(false) }}
-              className={`inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border transition-colors ${
-                mostrarAnadir
-                  ? 'bg-orange-50 text-orange-600 border-orange-200'
-                  : 'text-gray-500 hover:text-gray-700 border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              + Añadir dominios
-            </button>
-          )}
-
-          {/* Buscar (cuando no hay contactos) */}
-          {!tieneContactos && !enProceso && (
-            <button
-              onClick={() => buscarContactos(dominiosParsed)}
-              disabled={dominiosParsed.length === 0}
-              className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
-            >
-              Buscar contactos
-            </button>
-          )}
         </div>
       </div>
 
       <div className="p-6 space-y-5">
         {/* Metrics */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {[
             { label: 'Campaña', value: campana.nombre },
-            { label: 'Dominios buscados', value: dominiosParsed.length || '—' },
             { label: 'Contactos', value: contactos.length },
-            { label: 'Sin resultados', value: stats.sinResultados || '—' },
+            { label: 'Emails enviados', value: campana.total_enviados || '—' },
           ].map(({ label, value }) => (
             <div key={label} className="bg-white border border-gray-200 rounded-lg px-4 py-3">
               <p className="text-xs text-gray-400 mb-1">{label}</p>
@@ -704,8 +433,8 @@ export default function DetalleCampanaPage() {
           ))}
         </div>
 
-        {/* Apollo CTA — cuando hay perfil configurado y no hay contactos */}
-        {!tieneContactos && !enProceso && campana.preferencias_busqueda?.perfil_apollo && (
+        {/* Apollo — cuando no hay contactos */}
+        {!tieneContactos && !enProceso && (
           <ApolloSearchPanel
             campana={campana}
             onContactosGuardados={(n) => {
@@ -714,413 +443,6 @@ export default function DetalleCampanaPage() {
             }}
             onError={(msg) => setToast({ msg, tipo: 'error' })}
           />
-        )}
-
-        {/* Panel búsqueda — primera vez */}
-        {!tieneContactos && !enProceso && (
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            {/* Tabs */}
-            <div className="flex border-b border-gray-200">
-              {(['dominios', 'sector'] as const).map((modo) => (
-                <button
-                  key={modo}
-                  onClick={() => setModoBusqueda(modo)}
-                  className={`flex-1 py-3 text-xs font-medium transition-colors ${
-                    modoBusqueda === modo
-                      ? 'text-orange-600 border-b-2 border-orange-500 bg-orange-50/50'
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
-                >
-                  {modo === 'dominios' ? 'Por dominio' : 'Por sector con IA'}
-                </button>
-              ))}
-            </div>
-
-            <div className="p-5">
-              {/* Cuántos contactos traer — único ajuste previo a buscar */}
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
-                <label className="text-xs font-medium text-gray-500 shrink-0">
-                  Contactos por empresa
-                </label>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {[1, 3, 5, 10, 20].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => { setMaxPorDominio(n); setMaxPorDominioInput(String(n)) }}
-                      className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
-                        maxPorDominio === n
-                          ? 'bg-orange-500 text-white border-orange-500'
-                          : 'text-gray-500 border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                  <input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={maxPorDominioInput}
-                    onChange={(e) => {
-                      setMaxPorDominioInput(e.target.value)
-                      const n = parseInt(e.target.value)
-                      if (!isNaN(n) && n >= 1 && n <= 50) setMaxPorDominio(n)
-                    }}
-                    placeholder="otro"
-                    title="Número personalizado (máx. 50)"
-                    className={`w-14 text-center text-xs border rounded-md px-2 py-1 outline-none transition-colors ${
-                      ![1,3,5,10,20].includes(maxPorDominio) && maxPorDominio > 0
-                        ? 'bg-orange-500 text-white border-orange-500'
-                        : 'text-gray-500 border-gray-200 focus:border-orange-400'
-                    }`}
-                  />
-                </div>
-                <p className="text-[10px] text-gray-400">{maxPorDominio} por empresa · máx. 50</p>
-              </div>
-
-              {modoBusqueda === 'dominios' ? (
-                <>
-                  <p className="text-xs text-gray-400 mb-3">Pega los dominios a prospectar. Uno por línea, comas o URLs completas.</p>
-                  <textarea
-                    value={dominiosTexto}
-                    onChange={(e) => setDominiosTexto(e.target.value)}
-                    placeholder={'stripe.com\nshopify.com\nvercel.com'}
-                    rows={6}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 font-mono outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 resize-none transition-all"
-                  />
-                  {dominiosParsed.length > 0 && (
-                    <p className="text-xs text-gray-400 mt-2">{dominiosParsed.length} dominio{dominiosParsed.length !== 1 ? 's' : ''} detectado{dominiosParsed.length !== 1 ? 's' : ''}</p>
-                  )}
-                </>
-              ) : (
-                <>
-                  <p className="text-xs text-gray-400 mb-3">Claude genera una lista de empresas reales del sector. Luego Hunter busca sus contactos automáticamente.</p>
-                  <div className="flex gap-3 mb-3">
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">Sector</label>
-                      <input
-                        value={sectorBusqueda}
-                        onChange={(e) => setSectorBusqueda(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && buscarPorSector()}
-                        placeholder="ej. Ecommerce, SaaS, Hostelería..."
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
-                      />
-                    </div>
-                    <div className="w-32">
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">Región</label>
-                      <input
-                        value={regionBusqueda}
-                        onChange={(e) => setRegionBusqueda(e.target.value)}
-                        placeholder="ej. Asturias"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
-                      />
-                    </div>
-                    <div className="w-28">
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">País</label>
-                      <input
-                        value={paisBusqueda}
-                        onChange={(e) => setPaisBusqueda(e.target.value)}
-                        placeholder="España"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    onClick={buscarPorSector}
-                    disabled={!sectorBusqueda.trim() || buscandoSector}
-                    className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
-                  >
-                    {buscandoSector ? (
-                      <>
-                        <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                        </svg>
-                        Buscando empresas...
-                      </>
-                    ) : (
-                      <>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                        </svg>
-                        Generar empresas con IA
-                      </>
-                    )}
-                  </button>
-
-                  {/* Capa 3: Resultados sugeridos con checkboxes */}
-                  {dominiosSugeridos.length > 0 && (
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-medium text-gray-500">
-                          {dominiosSugeridos.length} empresas sugeridas — selecciona las que quieres enriquecer
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setDominiosSeleccionados(new Set(dominiosSugeridos))}
-                            className="text-xs text-gray-400 hover:text-gray-600"
-                          >
-                            Todas
-                          </button>
-                          <span className="text-gray-200">|</span>
-                          <button
-                            onClick={() => setDominiosSeleccionados(new Set())}
-                            className="text-xs text-gray-400 hover:text-gray-600"
-                          >
-                            Ninguna
-                          </button>
-                          <span className="text-gray-200">|</span>
-                          <button
-                            onClick={() => { setDominiosSugeridos([]); setDominiosSeleccionados(new Set()) }}
-                            className="text-xs text-gray-400 hover:text-gray-600"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                      </div>
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-56 overflow-y-auto">
-                        <div className="grid grid-cols-2 gap-1">
-                          {dominiosSugeridos.map((d) => {
-                            const sel = dominiosSeleccionados.has(d)
-                            return (
-                              <label
-                                key={d}
-                                className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${sel ? 'bg-orange-50' : 'hover:bg-gray-100'}`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={sel}
-                                  onChange={() => {
-                                    setDominiosSeleccionados(prev => {
-                                      const next = new Set(prev)
-                                      if (sel) { next.delete(d) } else { next.add(d) }
-                                      return next
-                                    })
-                                  }}
-                                  className="accent-orange-500 shrink-0"
-                                />
-                                <span className={`text-xs font-mono truncate ${sel ? 'text-orange-700' : 'text-gray-500'}`}>{d}</span>
-                              </label>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-3">
-                        <p className="text-xs text-gray-400">
-                          {dominiosSeleccionados.size} de {dominiosSugeridos.length} seleccionadas
-                          {maxPorDominio > 0 && ` · ~${dominiosSeleccionados.size * maxPorDominio} contactos máx.`}
-                        </p>
-                        <button
-                          onClick={() => buscarContactos(Array.from(dominiosSeleccionados))}
-                          disabled={dominiosSeleccionados.size === 0}
-                          className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
-                        >
-                          Buscar contactos →
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Capa 2: Panel de filtrado pre-guardado */}
-        {contactosPrevio.length > 0 && (
-          <div className="bg-white border border-orange-200 rounded-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-orange-100 bg-orange-50/40 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-900">
-                  Hunter encontró {contactosPrevio.length} contactos
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Emails genéricos ya excluidos · filtra por cargo para quedarte con los más relevantes
-                </p>
-              </div>
-              <button onClick={() => setContactosPrevio([])} className="text-gray-300 hover:text-gray-500 transition-colors">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="px-5 py-4 space-y-4">
-
-              {/* Filtro de perfiles con IA */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-medium text-gray-700">
-                    ¿Qué perfiles quieres conservar?
-                    <span className="text-gray-400 ml-1 font-normal">— vacío = guardar todos</span>
-                  </label>
-                  <button
-                    onClick={sugerirPerfiles}
-                    disabled={sugirendoPerfiles}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-orange-500 hover:text-orange-600 disabled:opacity-50 transition-colors"
-                  >
-                    {sugirendoPerfiles
-                      ? <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
-                      : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                    }
-                    Sugerir con IA
-                  </button>
-                </div>
-
-                {/* Si no hay descripción guardada, mostrar campo inline */}
-                {!(campana?.descripcion_agencia || descAgencia) && (
-                  <div className="mb-2">
-                    <input
-                      value={descAgencia}
-                      onChange={(e) => setDescAgencia(e.target.value)}
-                      placeholder="Describe brevemente tu servicio para que la IA sugiera los perfiles ideales..."
-                      className="w-full bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-gray-700 placeholder:text-amber-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
-                    />
-                  </div>
-                )}
-
-                {/* Chips sugeridos por IA — clickables para activar/desactivar */}
-                {perfilesSugeridos.length > 0 && (
-                  <div className="mb-2">
-                    <p className="text-[10px] text-gray-400 mb-1.5">Sugeridos por IA — haz clic para activar:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {perfilesSugeridos.map((p) => {
-                        const activos = filtroCargo.split(',').map(x => x.trim()).filter(Boolean)
-                        const activo = activos.some(a => a.toLowerCase() === p.toLowerCase())
-                        return (
-                          <button
-                            key={p}
-                            onClick={() => {
-                              const lista = filtroCargo.split(',').map(x => x.trim()).filter(Boolean)
-                              if (activo) {
-                                setFiltroCargo(lista.filter(x => x.toLowerCase() !== p.toLowerCase()).join(', '))
-                              } else {
-                                setFiltroCargo([...lista, p].join(', '))
-                              }
-                            }}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all ${
-                              activo
-                                ? 'bg-orange-500 text-white border-orange-500'
-                                : 'bg-white text-gray-500 border-gray-200 hover:border-orange-300 hover:text-orange-500'
-                            }`}
-                          >
-                            {activo && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                            {p}
-                          </button>
-                        )
-                      })}
-                      <button onClick={() => setPerfilesSugeridos([])} className="text-[10px] text-gray-300 hover:text-gray-400 ml-1">
-                        ocultar
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <input
-                  value={filtroCargo}
-                  onChange={(e) => setFiltroCargo(e.target.value)}
-                  placeholder="ej. CEO, Director de Marketing, CMO, Founder..."
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition-all"
-                />
-
-                {/* Chips de perfiles activos */}
-                {filtroCargo.trim() && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {filtroCargo.split(',').map(p => p.trim()).filter(Boolean).map((p) => (
-                      <span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-full text-[10px] font-medium">
-                        {p}
-                        <button
-                          onClick={() => setFiltroCargo(prev => prev.split(',').map(x => x.trim()).filter(x => x !== p).join(', '))}
-                          className="hover:text-orange-800 ml-0.5"
-                        >×</button>
-                      </span>
-                    ))}
-                    <button onClick={() => setFiltroCargo('')} className="text-[10px] text-gray-300 hover:text-gray-500">
-                      limpiar
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Preview y acción */}
-              <div className={`flex items-center justify-between px-4 py-3 rounded-lg ${
-                contactosFiltradosPrevio.length > 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'
-              }`}>
-                <div>
-                  <p className={`text-sm font-semibold ${contactosFiltradosPrevio.length > 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                    {contactosFiltradosPrevio.length} contactos seleccionados
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {contactosExcluidosPrevio > 0
-                      ? `${contactosExcluidosPrevio} excluidos por filtro de cargo`
-                      : 'Sin filtro de cargo activo'}
-                  </p>
-                </div>
-                <button
-                  onClick={guardarContactosFiltrados}
-                  disabled={contactosFiltradosPrevio.length === 0 || fase === 'buscando'}
-                  className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
-                >
-                  {fase === 'buscando' && <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>}
-                  Guardar {contactosFiltradosPrevio.length} contactos
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Historial de búsquedas */}
-        {historialBusquedas.length > 0 && !tieneContactos && !enProceso && (
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <button
-              onClick={() => setMostrarHistorial((v) => !v)}
-              className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                <span className="text-xs font-medium text-gray-600">Búsquedas anteriores</span>
-                <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{historialBusquedas.length}</span>
-              </div>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`text-gray-400 transition-transform ${mostrarHistorial ? 'rotate-180' : ''}`}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-            {mostrarHistorial && (
-              <div className="border-t border-gray-100 divide-y divide-gray-50">
-                {historialBusquedas.map((h, i) => (
-                  <div key={i} className="px-5 py-3 flex items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs text-gray-500 font-mono truncate">
-                          {h.dominios.slice(0, 3).join(', ')}{h.dominios.length > 3 ? ` +${h.dominios.length - 3}` : ''}
-                        </span>
-                        {h.filtro_cargo && (
-                          <span className="text-[10px] text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">
-                            {h.filtro_cargo.split(',')[0].trim()}{h.filtro_cargo.split(',').length > 1 ? ` +${h.filtro_cargo.split(',').length - 1}` : ''}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5">
-                        {new Date(h.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                        {' · '}{h.encontrados} encontrados · {h.guardados} guardados
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setDominiosTexto(h.dominios.join('\n'))
-                        if (h.filtro_cargo) setFiltroCargo(h.filtro_cargo)
-                        setMostrarHistorial(false)
-                      }}
-                      className="text-[11px] text-orange-500 hover:text-orange-600 font-medium shrink-0"
-                    >
-                      Repetir →
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         )}
 
         {/* Panel análisis de empresas */}
@@ -1348,59 +670,11 @@ export default function DetalleCampanaPage() {
           </div>
         )}
 
-        {/* Panel añadir dominios — cuando ya hay contactos */}
-        {mostrarAnadir && tieneContactos && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-5">
-            <p className="text-xs font-semibold text-orange-700 uppercase tracking-wider mb-1">Añadir más dominios</p>
-            <p className="text-xs text-orange-600/70 mb-3">Los nuevos contactos se añadirán a los existentes. No se duplicarán emails ya guardados.</p>
-            {/* Capa 1 también en añadir */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs text-orange-700 shrink-0">Contactos por empresa</span>
-              {[1, 2, 3, 5, 0].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setMaxPorDominio(n)}
-                  className={`px-2 py-1 text-xs rounded border transition-colors ${
-                    maxPorDominio === n
-                      ? 'bg-orange-500 text-white border-orange-500'
-                      : 'text-orange-700 border-orange-200 bg-white hover:border-orange-400'
-                  }`}
-                >
-                  {n === 0 ? 'Todos' : n}
-                </button>
-              ))}
-            </div>
-            <textarea
-              value={dominiosNuevos}
-              onChange={(e) => setDominiosNuevos(e.target.value)}
-              placeholder={'nuevaempresa.com\notraempresa.es'}
-              rows={4}
-              className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 font-mono outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 resize-none transition-all"
-            />
-            <div className="flex items-center gap-2 mt-3">
-              <button
-                onClick={() => buscarContactos(dominiosNuevosParsed)}
-                disabled={dominiosNuevosParsed.length === 0 || enProceso}
-                className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-md transition-colors"
-              >
-                Buscar en {dominiosNuevosParsed.length > 0 ? `${dominiosNuevosParsed.length} dominio${dominiosNuevosParsed.length !== 1 ? 's' : ''}` : 'nuevos dominios'}
-              </button>
-              <button
-                onClick={() => { setMostrarAnadir(false); setDominiosNuevos('') }}
-                className="text-sm text-gray-400 hover:text-gray-600 px-3 py-2 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Resumen */}
         {tieneContactos && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">
               <span className="text-gray-900 font-semibold">{contactos.length}</span> contactos
-              {stats.sinResultados > 0 && <span className="ml-2 text-gray-400">· {stats.sinResultados} dominios sin resultados</span>}
             </p>
           </div>
         )}
@@ -1425,7 +699,7 @@ export default function DetalleCampanaPage() {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
             <span className="font-medium">
-              {fase === 'buscando' && 'Buscando en Hunter...'}
+              {fase === 'buscando' && 'Buscando contactos...'}
               {fase === 'analizando' && 'Analizando empresas...'}
               {fase === 'enviando' && `Enviando${modoEnvio === 'test' ? ' (test)' : ''}...`}
               {fase === 'generando' && (progGeneracion

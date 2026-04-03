@@ -2,7 +2,7 @@ const pasos = [
   {
     num: '01',
     titulo: 'Busca contactos reales',
-    descripcion: 'Pega los dominios de las empresas que te interesan o deja que la IA genere una lista de empresas del sector. Hunter.io extrae los emails verificados de los responsables.',
+    descripcion: 'Define el sector y el cargo objetivo y Apollo.io localiza los contactos directamente: emails verificados de los decisores que te interesan, sin necesidad de dominios.',
     detalle: 'CEO, directores, managers — solo decisores reales, sin info@ ni contacto@',
     color: 'from-orange-500/10 to-orange-500/5',
     border: 'border-orange-100',
@@ -40,8 +40,8 @@ const features = [
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
     ),
-    titulo: 'Hunter.io integrado',
-    desc: 'Base de datos de +200M emails verificados. Solo contactos reales con cargo y empresa.',
+    titulo: 'Apollo.io integrado',
+    desc: 'Base de datos de +200M contactos verificados. Búsqueda directa por cargo y sector, sin dominios.',
   },
   {
     icono: (

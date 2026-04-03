@@ -4,25 +4,6 @@ export type Tono = 'cercano' | 'formal' | 'millennial' | 'tecnico'
 export type EstadoContacto = 'pendiente' | 'enviado' | 'abierto' | 'respondido' | 'rebotado' | 'error' | 'no_contactar'
 export type EtapaPipeline = 'respondio' | 'call_agendada' | 'propuesta_enviada' | 'negociando' | 'cerrado_ganado' | 'cerrado_perdido'
 
-// Valores exactos de la API de Hunter.io
-export type HunterDepartamento =
-  | 'executive' | 'it' | 'finance' | 'management' | 'sales'
-  | 'legal' | 'support' | 'hr' | 'marketing' | 'communication'
-  | 'education' | 'design' | 'health' | 'operations'
-
-export type HunterSeniority = 'junior' | 'senior' | 'executive'
-
-export type HunterTamanoEmpresa =
-  | '1-10' | '11-50' | '51-200' | '201-500'
-  | '501-1000' | '1001-5000' | '5001-10000' | '10001+'
-
-export interface FiltrosHunter {
-  sector: string              // industria en formato LinkedIn
-  pais: string                // código ISO (ES, MX, AR...)
-  tamanos: HunterTamanoEmpresa[]
-  departamentos: HunterDepartamento[]
-  seniority: HunterSeniority[]
-}
 
 export interface Perfil {
   id: string
@@ -69,7 +50,6 @@ export interface Campana {
   descripcion_agencia: string
   cargos_objetivo: string[]
   dominios?: string[]
-  filtros_hunter?: FiltrosHunter
   preferencias_busqueda?: PreferenciasBusqueda
   estado: EstadoCampana
   total_contactos: number
@@ -180,43 +160,8 @@ export const LIMITES_PLAN: Record<Plan, { precio_mensual: number; contactos_mes:
   business: { precio_mensual: 199, contactos_mes: 10000, campanas_activas: 999, seguimientos: 5 },
 }
 
-// Etiquetas en español para los valores de Hunter
-export const DEPARTAMENTOS_HUNTER: Record<HunterDepartamento, string> = {
-  executive:     'Dirección / C-Suite',
-  management:    'Management',
-  sales:         'Ventas',
-  marketing:     'Marketing',
-  it:            'IT / Tecnología',
-  finance:       'Finanzas',
-  hr:            'Recursos Humanos',
-  operations:    'Operaciones',
-  support:       'Soporte / Atención cliente',
-  legal:         'Legal',
-  communication: 'Comunicación',
-  design:        'Diseño',
-  education:     'Educación',
-  health:        'Salud',
-}
-
-export const SENIORITY_HUNTER: Record<HunterSeniority, string> = {
-  executive: 'Dirección (C-level, VP, Director)',
-  senior:    'Senior (Manager, Lead)',
-  junior:    'Junior',
-}
-
-export const TAMANOS_EMPRESA: Record<HunterTamanoEmpresa, string> = {
-  '1-10':       '1–10 empleados',
-  '11-50':      '11–50 empleados',
-  '51-200':     '51–200 empleados',
-  '201-500':    '201–500 empleados',
-  '501-1000':   '501–1000 empleados',
-  '1001-5000':  '1.001–5.000 empleados',
-  '5001-10000': '5.001–10.000 empleados',
-  '10001+':     'Más de 10.000 empleados',
-}
-
-// Sectores más comunes en España/LATAM con el valor exacto para Hunter
-export const SECTORES_HUNTER: { label: string; value: string }[] = [
+// Sectores más comunes en España/LATAM
+export const SECTORES: { label: string; value: string }[] = [
   { label: 'Ecommerce / Retail Online',         value: 'Retail' },
   { label: 'Software / SaaS',                   value: 'Software Development' },
   { label: 'Agencia de Marketing / Publicidad', value: 'Advertising Services' },
@@ -239,7 +184,7 @@ export const SECTORES_HUNTER: { label: string; value: string }[] = [
   { label: 'Energía',                           value: 'Renewable Energy Semiconductor Manufacturing' },
 ]
 
-export const PAISES_HUNTER: { label: string; value: string }[] = [
+export const PAISES: { label: string; value: string }[] = [
   { label: 'España',          value: 'ES' },
   { label: 'México',          value: 'MX' },
   { label: 'Argentina',       value: 'AR' },

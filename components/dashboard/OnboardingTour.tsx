@@ -56,7 +56,7 @@ const pasos = [
       </svg>
     ),
     titulo: 'Paso 2 — Busca contactos reales',
-    descripcion: 'Arrivo usa Hunter.io para encontrar los emails reales de las personas en las empresas que te interesan. Puedes buscar por dominio o dejar que la IA sugiera empresas del sector.',
+    descripcion: 'Arrivo usa Apollo.io para encontrar contactos reales por cargo y sector, sin necesidad de dominios. Define el perfil objetivo y Apollo localiza los decisores directamente.',
     detalle: (
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mt-4 space-y-3">
         <div className="flex items-start gap-3">
@@ -64,8 +64,8 @@ const pasos = [
             <span className="text-orange-600 text-[10px] font-bold">A</span>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-800">Por dominio</p>
-            <p className="text-xs text-gray-500 mt-0.5">Pega los dominios de las empresas que te interesan: <span className="font-mono bg-gray-100 px-1 rounded">empresa.com</span></p>
+            <p className="text-sm font-medium text-gray-800">Por cargo y sector</p>
+            <p className="text-xs text-gray-500 mt-0.5">Selecciona el perfil objetivo (CEO, Director de Marketing…) y el sector. Apollo busca los contactos automáticamente.</p>
           </div>
         </div>
         <div className="flex items-start gap-3">
@@ -73,12 +73,12 @@ const pasos = [
             <span className="text-orange-600 text-[10px] font-bold">B</span>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-800">Por sector con IA</p>
-            <p className="text-xs text-gray-500 mt-0.5">Escribe el sector y Claude genera una lista de empresas reales. Tú seleccionas cuáles buscar.</p>
+            <p className="text-sm font-medium text-gray-800">Emails verificados</p>
+            <p className="text-xs text-gray-500 mt-0.5">Apollo devuelve emails verificados con nombre, cargo y empresa. Solo decisores reales.</p>
           </div>
         </div>
         <p className="text-xs text-orange-600 bg-orange-50 border border-orange-100 rounded-lg px-3 py-2">
-          💡 Usa los filtros para quedarte solo con decisores (CEO, Director, Manager) y excluir emails genéricos como info@ o contacto@
+          💡 Define bien el cargo objetivo en el wizard de nueva campaña para obtener los contactos más relevantes
         </p>
       </div>
     ),

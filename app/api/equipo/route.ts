@@ -12,14 +12,14 @@ export async function GET() {
     .from('perfiles')
     .select('equipo_id')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   // Case 1: User is the owner of a team
   const { data: equipoOwned } = await supabase
     .from('equipos')
     .select('*')
     .eq('owner_id', user.id)
-    .single()
+    .maybeSingle()
 
   // Case 2: User is a member of a team
   const equipoId = equipoOwned?.id || perfil?.equipo_id
@@ -27,7 +27,7 @@ export async function GET() {
 
   const { data: equipo } = equipoOwned
     ? { data: equipoOwned }
-    : await supabase.from('equipos').select('*').eq('id', equipoId).single()
+    : await supabase.from('equipos').select('*').eq('id', equipoId).maybeSingle()
 
   const { data: miembros } = await supabase
     .from('miembros_equipo')
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     .from('equipos')
     .select('id')
     .eq('owner_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (existing) return NextResponse.json({ error: 'Ya tienes un equipo creado' }, { status: 400 })
 
@@ -98,8 +98,9 @@ export async function PATCH(req: Request) {
     .update({ nombre: nombre.trim() })
     .eq('owner_id', user.id)
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!data) return NextResponse.json({ error: 'Equipo no encontrado' }, { status: 404 })
   return NextResponse.json({ equipo: data })
 }

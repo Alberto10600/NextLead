@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     .from('equipos')
     .select('*')
     .eq('owner_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!equipo) return NextResponse.json({ error: 'No tienes un equipo. Créalo primero.' }, { status: 400 })
 
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     .from('perfiles')
     .select('nombre, agencia')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   const inviterName = perfil?.nombre || perfil?.agencia || user.email
 
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     .select('id, token, estado')
     .eq('equipo_id', equipo.id)
     .eq('email', emailNorm)
-    .single()
+    .maybeSingle()
 
   if (existente?.estado === 'activo') {
     return NextResponse.json({ error: 'Este usuario ya pertenece al equipo' }, { status: 400 })
@@ -67,9 +67,10 @@ export async function POST(req: Request) {
         invited_by: user.id,
       })
       .select('token')
-      .single()
+      .maybeSingle()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!nuevo) return NextResponse.json({ error: 'Error creando invitación' }, { status: 500 })
     token = nuevo.token
   }
 
