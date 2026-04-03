@@ -59,7 +59,6 @@ export default function ApolloSearchPanel({ campana, onContactosGuardados, onErr
       const dataGuardar = await resGuardar.json()
       if (!resGuardar.ok) throw new Error(dataGuardar.error || 'Error guardando contactos')
 
-      setPreview({ total: contactos.length, muestra: dataGuardar.contactos?.length || contactos.length })
       onContactosGuardados(dataGuardar.contactos?.length || contactos.length)
     } catch (e: unknown) {
       onError((e as Error).message)
