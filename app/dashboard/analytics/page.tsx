@@ -8,6 +8,10 @@ import type { Campana } from '@/types'
 interface ContactoAnalytics {
   id: string
   campana_id: string
+  nombre?: string
+  apellido?: string
+  empresa?: string
+  email?: string
   cargo?: string
   linkedin_url?: string
   estado: string
@@ -15,7 +19,16 @@ interface ContactoAnalytics {
   fecha_apertura?: string
   fecha_respuesta?: string
   numero_seguimiento: number
+  total_aperturas?: number
+  es_lead_caliente?: boolean
   created_at?: string
+}
+
+interface EventoApertura {
+  id: string
+  contacto_id: string
+  campana_id: string
+  created_at: string
 }
 
 type SortKey = 'nombre' | 'enviados' | 'apertura' | 'respuesta' | 'tiempo'
@@ -83,9 +96,12 @@ function InsightCard({
 export default function AnalyticsPage() {
   const [campanas, setCampanas] = useState<Campana[]>([])
   const [contactos, setContactos] = useState<ContactoAnalytics[]>([])
+  const [eventosApertura, setEventosApertura] = useState<EventoApertura[]>([])
   const [loading, setLoading] = useState(true)
   const [sortKey, setSortKey] = useState<SortKey>('enviados')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [drilldownCampana, setDrilldownCampana] = useState<string>('todas')
+  const [soloLeadsCalientes, setSoloLeadsCalientes] = useState(false)
 
   useEffect(() => {
     fetch('/api/analytics')
@@ -93,6 +109,7 @@ export default function AnalyticsPage() {
       .then(d => {
         setCampanas(d.campanas || [])
         setContactos(d.contactos || [])
+        setEventosApertura(d.eventosApertura || [])
       })
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -540,6 +557,151 @@ export default function AnalyticsPage() {
           </div>
 
         </div>
+
+        {/* ── Drill-down: quién abrió ────────────────────────────────────────── */}
+        {(() => {
+          // Contactos que han abierto al menos una vez
+          const abiertos = contactos
+            .filter(c => ['abierto', 'respondido'].includes(c.estado) || (c.total_aperturas ?? 0) > 0)
+            .filter(c => drilldownCampana === 'todas' || c.campana_id === drilldownCampana)
+            .filter(c => !soloLeadsCalientes || c.es_lead_caliente)
+            .sort((a, b) => (b.total_aperturas ?? 0) - (a.total_aperturas ?? 0))
+
+          const leadsCalientes = contactos.filter(c =>
+            c.es_lead_caliente &&
+            (drilldownCampana === 'todas' || c.campana_id === drilldownCampana)
+          )
+
+          // Aperturas recientes (últimas 24h)
+          const hace24h = new Date(Date.now() - 86400000).toISOString()
+          const eventosRecientes = eventosApertura.filter(e =>
+            e.created_at > hace24h &&
+            (drilldownCampana === 'todas' || e.campana_id === drilldownCampana)
+          )
+
+          return (
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Quién abrió tu email</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Drill-down individual — cada apertura registrada</p>
+                  </div>
+                  {leadsCalientes.length > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                      {leadsCalientes.length} lead{leadsCalientes.length > 1 ? 's' : ''} caliente{leadsCalientes.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {eventosRecientes.length > 0 && (
+                    <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full">
+                      {eventosRecientes.length} apertura{eventosRecientes.length > 1 ? 's' : ''} últimas 24h
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setSoloLeadsCalientes(v => !v)}
+                    className={`text-[11px] font-medium px-3 py-1.5 rounded-lg border transition-colors ${soloLeadsCalientes ? 'bg-red-50 border-red-200 text-red-600' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                  >
+                    🔥 Solo leads calientes
+                  </button>
+                  <select
+                    value={drilldownCampana}
+                    onChange={e => setDrilldownCampana(e.target.value)}
+                    className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 bg-white focus:outline-none focus:border-orange-300"
+                  >
+                    <option value="todas">Todas las campañas</option>
+                    {campanas.map(c => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {abiertos.length === 0 ? (
+                <div className="p-10 text-center text-sm text-gray-400">
+                  {soloLeadsCalientes ? 'No hay leads calientes aún. Aparecen cuando un contacto abre el email 2+ veces sin responder.' : 'Nadie ha abierto tus emails aún. El tracking pixel registrará cada apertura aquí.'}
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Contacto</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Empresa</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Campaña</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Aperturas</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Última apertura</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-medium text-gray-400 uppercase tracking-wider">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {abiertos.map(c => {
+                      const campana = campanas.find(ca => ca.id === c.campana_id)
+                      const eventosContacto = eventosApertura
+                        .filter(e => e.contacto_id === c.id)
+                        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+                      const ultimaApertura = eventosContacto[0]?.created_at || c.fecha_apertura
+                      const numAperturas = c.total_aperturas ?? (eventosContacto.length || (c.fecha_apertura ? 1 : 0))
+                      const nombreCompleto = [c.nombre, c.apellido].filter(Boolean).join(' ') || c.email || '—'
+
+                      return (
+                        <tr key={c.id} className={`border-b border-gray-50 last:border-0 transition-colors ${c.es_lead_caliente ? 'bg-red-50/40 hover:bg-red-50/70' : 'hover:bg-gray-50/50'}`}>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              {c.es_lead_caliente && (
+                                <span title="Lead caliente — abrió 2+ veces sin responder" className="text-base leading-none">🔥</span>
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-gray-800 truncate max-w-[160px]">{nombreCompleto}</p>
+                                {c.cargo && <p className="text-[10px] text-gray-400 truncate max-w-[160px]">{c.cargo}</p>}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500 truncate max-w-[120px]">{c.empresa || '—'}</td>
+                          <td className="px-4 py-3 text-xs text-gray-500 truncate max-w-[140px]">{campana?.nombre || '—'}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="flex gap-0.5">
+                                {Array.from({ length: Math.min(numAperturas, 5) }).map((_, i) => (
+                                  <span key={i} className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-blue-400' : 'bg-orange-400'}`} />
+                                ))}
+                                {numAperturas > 5 && <span className="text-[10px] text-gray-400 ml-0.5">+{numAperturas - 5}</span>}
+                              </div>
+                              <span className={`text-xs font-bold tabular-nums ${numAperturas >= 3 ? 'text-red-600' : numAperturas >= 2 ? 'text-orange-500' : 'text-blue-600'}`}>
+                                {numAperturas}x
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500 tabular-nums">
+                            {ultimaApertura
+                              ? new Date(ultimaApertura).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+                              : '—'}
+                          </td>
+                          <td className="px-4 py-3">
+                            {c.estado === 'respondido' ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                <span className="w-1 h-1 rounded-full bg-emerald-400" /> Respondió
+                              </span>
+                            ) : c.es_lead_caliente ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded-full">
+                                <span className="w-1 h-1 rounded-full bg-red-400 animate-pulse" /> Lead caliente
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
+                                <span className="w-1 h-1 rounded-full bg-blue-400" /> Abrió
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )
+        })()}
 
         {/* Nota metodológica */}
         <p className="text-[10px] text-gray-300 text-center pb-2">

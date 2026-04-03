@@ -79,6 +79,40 @@ create table public.seguimientos (
   created_at timestamptz default now()
 );
 
+-- ====================================================
+-- MIGRACIÓN: Drill-down + Leads calientes
+-- Ejecutar en Supabase SQL Editor si ya tienes datos
+-- ====================================================
+
+-- Nuevas columnas en contactos
+alter table public.contactos add column if not exists total_aperturas integer default 0;
+alter table public.contactos add column if not exists es_lead_caliente boolean default false;
+
+-- Tabla de eventos de apertura (una fila por cada apertura individual)
+create table if not exists public.eventos_apertura (
+  id uuid default uuid_generate_v4() primary key,
+  contacto_id uuid references public.contactos(id) on delete cascade not null,
+  campana_id uuid references public.campanas(id) on delete cascade not null,
+  user_id uuid references public.perfiles(id) on delete cascade not null,
+  created_at timestamptz default now()
+);
+
+alter table public.eventos_apertura enable row level security;
+
+create policy "service role puede insertar eventos" on public.eventos_apertura
+  for insert with check (true);
+
+create policy "usuarios ven sus eventos de apertura" on public.eventos_apertura
+  for select using (auth.uid() = user_id);
+
+-- Índice para consultas de drill-down por contacto
+create index if not exists idx_eventos_apertura_contacto on public.eventos_apertura(contacto_id);
+create index if not exists idx_eventos_apertura_campana on public.eventos_apertura(campana_id);
+
+-- ====================================================
+-- Tabla de historial (para deduplicación)
+-- ====================================================
+
 -- Tabla de historial (para deduplicación)
 create table public.historial_contactos (
   id uuid default uuid_generate_v4() primary key,

@@ -114,11 +114,21 @@ export interface Contacto {
   fecha_apertura?: string
   fecha_respuesta?: string
   numero_seguimiento: number
+  total_aperturas?: number
+  es_lead_caliente?: boolean
   notas?: string
   etapa_pipeline?: EtapaPipeline | null
   created_at?: string
   // campo virtual: viene del join con campanas en /dashboard/contactos
   sector?: string
+}
+
+export interface EventoApertura {
+  id: string
+  contacto_id: string
+  campana_id: string
+  user_id: string
+  created_at: string
 }
 
 export interface Seguimiento {

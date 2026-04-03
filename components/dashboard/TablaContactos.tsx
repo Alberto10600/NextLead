@@ -284,17 +284,25 @@ export default function TablaContactos({ contactos: contactosIniciales, onExclui
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
-                      title={c.estado === 'error' && c.error_detalle ? c.error_detalle : undefined}
-                    >
-                      {badge.label}
-                      {c.estado === 'error' && c.error_detalle && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
+                        title={c.estado === 'error' && c.error_detalle ? c.error_detalle : undefined}
+                      >
+                        {badge.label}
+                        {c.estado === 'error' && c.error_detalle && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                          </svg>
+                        )}
+                      </span>
+                      {c.es_lead_caliente && c.estado !== 'respondido' && (
+                        <span title="Lead caliente — abrió 2+ veces sin responder" className="text-sm leading-none cursor-default">🔥</span>
                       )}
-                    </span>
+                      {(c.total_aperturas ?? 0) > 1 && (
+                        <span title={`Abrió ${c.total_aperturas} veces`} className="text-[10px] font-semibold text-orange-500 tabular-nums">{c.total_aperturas}x</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-1">
