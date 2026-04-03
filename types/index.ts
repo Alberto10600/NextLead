@@ -4,7 +4,6 @@ export type Tono = 'cercano' | 'formal' | 'millennial' | 'tecnico'
 export type EstadoContacto = 'pendiente' | 'enviado' | 'abierto' | 'respondido' | 'rebotado' | 'error' | 'no_contactar'
 export type EtapaPipeline = 'respondio' | 'call_agendada' | 'propuesta_enviada' | 'negociando' | 'cerrado_ganado' | 'cerrado_perdido'
 
-
 export interface Perfil {
   id: string
   email: string
@@ -17,14 +16,6 @@ export interface Perfil {
   created_at: string
 }
 
-export interface BusquedaHistorial {
-  fecha: string
-  dominios: string[]
-  encontrados: number
-  guardados: number
-  filtro_cargo?: string
-}
-
 export interface PerfilApollo {
   id: string
   label: string
@@ -34,9 +25,6 @@ export interface PerfilApollo {
 }
 
 export interface PreferenciasBusqueda {
-  max_por_dominio?: number
-  filtro_cargo?: string
-  historial?: BusquedaHistorial[]
   objetivo_contactos?: number
   perfil_apollo?: PerfilApollo
 }
@@ -49,7 +37,6 @@ export interface Campana {
   pais: string
   descripcion_agencia: string
   cargos_objetivo: string[]
-  dominios?: string[]
   preferencias_busqueda?: PreferenciasBusqueda
   estado: EstadoCampana
   total_contactos: number
