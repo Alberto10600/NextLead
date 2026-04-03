@@ -86,7 +86,7 @@ async function buscarPersonas(
 
   console.log('[Apollo] Search page', pagina, JSON.stringify(body))
 
-  const res = await fetch(`${APOLLO_BASE}/mixed_people/api_search`, {
+  const res = await fetch(`${APOLLO_BASE}/people/search`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
