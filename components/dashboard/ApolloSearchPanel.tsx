@@ -19,7 +19,7 @@ interface Props {
 
 export default function ApolloSearchPanel({ campana, onContactosGuardados, onError }: Props) {
   const [buscando, setBuscando] = useState(false)
-  const [preview, setPreview] = useState<{ total: number; muestra: number } | null>(null)
+
 
   const perfil = campana.preferencias_busqueda?.perfil_apollo
   const objetivo = campana.preferencias_busqueda?.objetivo_contactos || 25
